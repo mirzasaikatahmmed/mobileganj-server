@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { PaymentMethod, PaymentStatus } from '../../common/constants';
 import { Customer } from './customer.entity';
@@ -8,7 +8,6 @@ import { SaleItem } from './sale-item.entity';
 import { Payment } from './payment.entity';
 
 @Entity('sales')
-@Index(['invoiceNo'])
 export class Sale extends BaseEntity {
   @Column({ name: 'invoice_no', unique: true, length: 50 })
   invoiceNo: string;

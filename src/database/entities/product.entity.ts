@@ -26,7 +26,6 @@ import { ProductVariant } from './product-variant.entity';
 @Entity('products')
 @Index(['imei1'])
 @Index(['imei2'])
-@Index(['barcode'])
 export class Product extends BaseEntity {
   @Column({ length: 200 })
   title: string;
