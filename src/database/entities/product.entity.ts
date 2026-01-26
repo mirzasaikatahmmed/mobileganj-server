@@ -24,8 +24,8 @@ import { ProductDamage } from './product-damage.entity';
 import { ProductVariant } from './product-variant.entity';
 
 @Entity('products')
-@Index(['imei1'])
-@Index(['imei2'])
+@Index('IDX_product_imei1', ['imei1'])
+@Index('IDX_product_imei2', ['imei2'])
 export class Product extends BaseEntity {
   @Column({ length: 200 })
   title: string;

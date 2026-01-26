@@ -8,7 +8,10 @@ import {
   Delete,
   Query,
   UseGuards,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -96,6 +99,67 @@ export class ProductsController {
   @ApiResponse({ status: 404, description: 'Product not found' })
   findByBarcode(@Param('barcode') barcode: string) {
     return this.productsService.findByBarcode(barcode);
+  }
+
+  @Get('barcode/generate')
+  @ApiOperation({ summary: 'Generate barcode image' })
+  @ApiQuery({
+    name: 'value',
+    required: true,
+    type: String,
+    description: 'Barcode value to generate',
+  })
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    enum: ['png', 'svg'],
+    description: 'Image format (png or svg)',
+    default: 'png',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns barcode image',
+    content: {
+      'image/png': {
+        schema: { type: 'string', format: 'binary' },
+      },
+      'image/svg+xml': {
+        schema: { type: 'string' },
+      },
+    },
+  })
+  async generateBarcode(
+    @Query('value') value: string,
+    @Query('format') format: 'png' | 'svg' = 'png',
+    @Res() res: Response,
+  ) {
+    if (!value) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: 'Barcode value is required',
+      });
+    }
+
+    const result = await this.productsService.generateBarcodeImage(
+      value,
+      format,
+    );
+
+    if (format === 'png') {
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="barcode-${value}.png"`,
+      );
+      return res.send(result as Buffer);
+    } else {
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="barcode-${value}.svg"`,
+      );
+      return res.send(result as string);
+    }
   }
 
   @Get(':id')

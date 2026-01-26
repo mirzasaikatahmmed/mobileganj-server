@@ -24,7 +24,11 @@ import {
   PhoneType,
   ProductStatus,
 } from '../../common/constants';
-import { generateBarcode } from '../../common/utils';
+import {
+  generateBarcode,
+  generateBarcodeImage,
+  generateBarcodeSVG,
+} from '../../common/utils';
 
 @Injectable()
 export class ProductsService {
@@ -337,5 +341,22 @@ export class ProductsService {
 
     Object.assign(damage, updateData);
     return this.damageRepository.save(damage);
+  }
+
+  async generateBarcodeImage(
+    barcode: string,
+    format: 'png' | 'svg' = 'png',
+  ): Promise<Buffer | string> {
+    try {
+      if (format === 'png') {
+        return await generateBarcodeImage(barcode);
+      } else {
+        return generateBarcodeSVG(barcode);
+      }
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to generate barcode',
+      );
+    }
   }
 }

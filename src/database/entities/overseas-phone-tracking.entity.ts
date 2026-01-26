@@ -17,7 +17,7 @@ import { Carrier } from './carrier.entity';
 import { OverseasPhoneStatusHistory } from './overseas-phone-status-history.entity';
 
 @Entity('overseas_phone_trackings')
-@Index(['imei1'])
+@Index('IDX_overseas_phone_tracking_imei1', ['imei1'])
 export class OverseasPhoneTracking extends BaseEntity {
   @Column({ name: 'phone_model', length: 100 })
   phoneModel: string;

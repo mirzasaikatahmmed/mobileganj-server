@@ -3,8 +3,8 @@ import { BaseEntity } from './base.entity';
 import { User } from './user.entity';
 
 @Entity('refresh_tokens')
-@Index(['token'], { unique: true })
-@Index(['userId'])
+@Index('IDX_refresh_token_token', ['token'], { unique: true })
+@Index('IDX_refresh_token_user_id', ['userId'])
 export class RefreshToken extends BaseEntity {
   @Column({ name: 'user_id' })
   userId: string;
@@ -13,7 +13,7 @@ export class RefreshToken extends BaseEntity {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ type: 'text', unique: true })
+  @Column({ type: 'varchar', length: 500 })
   token: string;
 
   @Column({ name: 'expires_at', type: 'datetime' })
