@@ -1,7 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Supplier, SupplierPayment, Product, LocalSeller } from '../../database/entities';
+import {
+  Supplier,
+  SupplierPayment,
+  Product,
+  LocalSeller,
+} from '../../database/entities';
 import { PaymentMethod } from '../../common/constants';
 import { PaginationDto } from '../../common/dto';
 
@@ -18,12 +23,20 @@ export class SuppliersService {
     private localSellerRepository: Repository<LocalSeller>,
   ) {}
 
-  async create(data: { name: string; phone?: string; address?: string; shopName?: string; note?: string }) {
+  async create(data: {
+    name: string;
+    phone?: string;
+    address?: string;
+    shopName?: string;
+    note?: string;
+  }) {
     const supplier = this.supplierRepository.create(data);
     return this.supplierRepository.save(supplier);
   }
 
-  async findAll(paginationDto: PaginationDto & { search?: string; dueOnly?: boolean }) {
+  async findAll(
+    paginationDto: PaginationDto & { search?: string; dueOnly?: boolean },
+  ) {
     const { page = 1, limit = 10, search, dueOnly } = paginationDto;
     const skip = (page - 1) * limit;
 
@@ -74,24 +87,31 @@ export class SuppliersService {
   }
 
   async getSupplierTotals(supplierId: string) {
-    const purchaseResult = await this.productRepository
+    const purchaseResult = (await this.productRepository
       .createQueryBuilder('product')
       .select('COUNT(*)', 'totalPhones')
       .addSelect('SUM(product.purchasePrice)', 'totalPurchase')
       .where('product.supplierId = :supplierId', { supplierId })
-      .getRawOne();
+      .getRawOne()) as {
+      totalPhones?: string | null;
+      totalPurchase?: string | null;
+    } | null;
 
-    const paymentResult = await this.paymentRepository
+    const paymentResult = (await this.paymentRepository
       .createQueryBuilder('payment')
       .select('SUM(payment.amount)', 'totalPaid')
       .where('payment.supplierId = :supplierId', { supplierId })
-      .getRawOne();
+      .getRawOne()) as {
+      totalPaid?: string | null;
+    } | null;
 
-    const totalPurchase = parseFloat(purchaseResult?.totalPurchase || '0');
-    const totalPaid = parseFloat(paymentResult?.totalPaid || '0');
+    const totalPurchase = parseFloat(
+      String(purchaseResult?.totalPurchase || '0'),
+    );
+    const totalPaid = parseFloat(String(paymentResult?.totalPaid || '0'));
 
     return {
-      totalPhones: parseInt(purchaseResult?.totalPhones || '0'),
+      totalPhones: parseInt(String(purchaseResult?.totalPhones || '0')),
       totalPurchase,
       totalPaid,
       totalDue: totalPurchase - totalPaid,
@@ -100,10 +120,15 @@ export class SuppliersService {
 
   async makePayment(
     supplierId: string,
-    data: { amount: number; paymentMethod: PaymentMethod; paymentDate: Date; note?: string },
+    data: {
+      amount: number;
+      paymentMethod: PaymentMethod;
+      paymentDate: Date;
+      note?: string;
+    },
     userId: string,
   ) {
-    const supplier = await this.findOne(supplierId);
+    await this.findOne(supplierId);
 
     const payment = this.paymentRepository.create({
       supplierId,
@@ -117,12 +142,14 @@ export class SuppliersService {
     return this.paymentRepository.save(payment);
   }
 
-  // Local Sellers
-  async findAllLocalSellers(paginationDto: PaginationDto & { search?: string }) {
+  async findAllLocalSellers(
+    paginationDto: PaginationDto & { search?: string },
+  ) {
     const { page = 1, limit = 10, search } = paginationDto;
     const skip = (page - 1) * limit;
 
-    const queryBuilder = this.localSellerRepository.createQueryBuilder('seller');
+    const queryBuilder =
+      this.localSellerRepository.createQueryBuilder('seller');
 
     if (search) {
       queryBuilder.andWhere(

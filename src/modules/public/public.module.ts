@@ -12,7 +12,13 @@ import {
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, Brand, ProductVariant, PreOrder, Customer]),
+    TypeOrmModule.forFeature([
+      Product,
+      Brand,
+      ProductVariant,
+      PreOrder,
+      Customer,
+    ]),
   ],
   controllers: [PublicController],
   providers: [PublicService],

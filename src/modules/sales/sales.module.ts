@@ -2,7 +2,13 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SalesService } from './sales.service';
 import { SalesController } from './sales.controller';
-import { Sale, SaleItem, Customer, Product, Payment } from '../../database/entities';
+import {
+  Sale,
+  SaleItem,
+  Customer,
+  Product,
+  Payment,
+} from '../../database/entities';
 
 @Module({
   imports: [

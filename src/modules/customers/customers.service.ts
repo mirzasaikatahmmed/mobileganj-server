@@ -43,7 +43,9 @@ export class CustomersService {
     return this.customerRepository.save(customer);
   }
 
-  async findAll(paginationDto: PaginationDto & { dueOnly?: boolean; search?: string }) {
+  async findAll(
+    paginationDto: PaginationDto & { dueOnly?: boolean; search?: string },
+  ) {
     const { page = 1, limit = 10, dueOnly, search } = paginationDto;
     const skip = (page - 1) * limit;
 
@@ -64,7 +66,6 @@ export class CustomersService {
       .take(limit)
       .getManyAndCount();
 
-    // Calculate totals for each customer
     const customersWithTotals = await Promise.all(
       customers.map(async (customer) => {
         const totals = await this.getCustomerTotals(customer.id);
@@ -75,7 +76,6 @@ export class CustomersService {
       }),
     );
 
-    // Filter due only if requested
     let filteredCustomers = customersWithTotals;
     if (dueOnly) {
       filteredCustomers = customersWithTotals.filter((c) => c.totalDue > 0);
@@ -87,7 +87,9 @@ export class CustomersService {
         total: dueOnly ? filteredCustomers.length : total,
         page,
         limit,
-        totalPages: Math.ceil((dueOnly ? filteredCustomers.length : total) / limit),
+        totalPages: Math.ceil(
+          (dueOnly ? filteredCustomers.length : total) / limit,
+        ),
       },
     };
   }
@@ -123,20 +125,25 @@ export class CustomersService {
   }
 
   async getCustomerTotals(customerId: string) {
-    const result = await this.saleRepository
+    const result = (await this.saleRepository
       .createQueryBuilder('sale')
       .select('SUM(sale.grandTotal)', 'totalPurchase')
       .addSelect('SUM(sale.paidAmount)', 'totalPaid')
       .addSelect('SUM(sale.dueAmount)', 'totalDue')
       .addSelect('MAX(sale.saleDate)', 'lastPurchaseDate')
       .where('sale.customerId = :customerId', { customerId })
-      .getRawOne();
+      .getRawOne()) as {
+      totalPurchase?: string | null;
+      totalPaid?: string | null;
+      totalDue?: string | null;
+      lastPurchaseDate?: Date | null;
+    } | null;
 
     return {
-      totalPurchase: parseFloat(result?.totalPurchase || '0'),
-      totalPaid: parseFloat(result?.totalPaid || '0'),
-      totalDue: parseFloat(result?.totalDue || '0'),
-      lastPurchaseDate: result?.lastPurchaseDate,
+      totalPurchase: parseFloat(String(result?.totalPurchase || '0')),
+      totalPaid: parseFloat(String(result?.totalPaid || '0')),
+      totalDue: parseFloat(String(result?.totalDue || '0')),
+      lastPurchaseDate: result?.lastPurchaseDate || null,
     };
   }
 
@@ -170,7 +177,6 @@ export class CustomersService {
         );
       }
 
-      // Create due collection record
       const collection = this.dueCollectionRepository.create({
         customerId: dueCollectionDto.customerId,
         amount: dueCollectionDto.amount,
@@ -184,10 +190,12 @@ export class CustomersService {
 
       await queryRunner.manager.save(collection);
 
-      // Update sales - apply payment to oldest dues first
       const dueSales = await this.saleRepository.find({
         where: [
-          { customerId: dueCollectionDto.customerId, status: PaymentStatus.DUE },
+          {
+            customerId: dueCollectionDto.customerId,
+            status: PaymentStatus.DUE,
+          },
           {
             customerId: dueCollectionDto.customerId,
             status: PaymentStatus.PARTIAL_PAID,
@@ -213,7 +221,6 @@ export class CustomersService {
 
         await queryRunner.manager.save(sale);
 
-        // Create payment record
         const payment = this.paymentRepository.create({
           saleId: sale.id,
           amount: paymentAmount,

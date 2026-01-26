@@ -36,8 +36,12 @@ export class OverseasTrackingService {
     private dataSource: DataSource,
   ) {}
 
-  // Carriers
-  async createCarrier(data: { name: string; phone?: string; location?: string; note?: string }) {
+  async createCarrier(data: {
+    name: string;
+    phone?: string;
+    location?: string;
+    note?: string;
+  }) {
     const carrier = this.carrierRepository.create(data);
     return this.carrierRepository.save(carrier);
   }
@@ -49,7 +53,6 @@ export class OverseasTrackingService {
     });
   }
 
-  // Phone Tracking
   async create(
     data: {
       phoneModel: string;
@@ -98,7 +101,6 @@ export class OverseasTrackingService {
     const tracking = this.trackingRepository.create(trackingData);
     const savedTracking = await this.trackingRepository.save(tracking);
 
-    // Create initial status history
     await this.createStatusHistory(
       savedTracking.id,
       undefined,
@@ -119,7 +121,15 @@ export class OverseasTrackingService {
       endDate?: string;
     },
   ) {
-    const { page = 1, limit = 10, status, carrierId, sourceType, startDate, endDate } = filterDto;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      carrierId,
+      sourceType,
+      startDate,
+      endDate,
+    } = filterDto;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.trackingRepository
@@ -135,14 +145,19 @@ export class OverseasTrackingService {
     }
 
     if (sourceType) {
-      queryBuilder.andWhere('tracking.sourceType = :sourceType', { sourceType });
+      queryBuilder.andWhere('tracking.sourceType = :sourceType', {
+        sourceType,
+      });
     }
 
     if (startDate && endDate) {
-      queryBuilder.andWhere('tracking.createdAt BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      });
+      queryBuilder.andWhere(
+        'tracking.createdAt BETWEEN :startDate AND :endDate',
+        {
+          startDate,
+          endDate,
+        },
+      );
     }
 
     const [trackings, total] = await queryBuilder
@@ -200,14 +215,14 @@ export class OverseasTrackingService {
     return this.historyRepository.save(history);
   }
 
-  async addToStock(trackingId: string, userId: string) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async addToStock(trackingId: string, _userId: string) {
     const tracking = await this.findOne(trackingId);
 
     if (tracking.isAddedToStock) {
       throw new Error('Already added to stock');
     }
 
-    // Find or create supplier
     let supplier = await this.supplierRepository.findOne({
       where: { name: tracking.sourcePersonName },
     });
@@ -220,7 +235,6 @@ export class OverseasTrackingService {
       supplier = await this.supplierRepository.save(supplier);
     }
 
-    // Create product
     const product = this.productRepository.create({
       title: `${tracking.brand} ${tracking.phoneModel}`,
       category: ProductCategory.PHONE,
@@ -229,7 +243,7 @@ export class OverseasTrackingService {
       imei2: tracking.imei2,
       barcode: generateBarcode('PH'),
       purchasePrice: tracking.amountGiven || 0,
-      sellingPrice: 0, // To be set later
+      sellingPrice: 0,
       stockQty: 1,
       status: ProductStatus.IN_STOCK,
       supplierId: supplier.id,
@@ -238,7 +252,6 @@ export class OverseasTrackingService {
 
     const savedProduct = await this.productRepository.save(product);
 
-    // Update tracking
     tracking.isAddedToStock = true;
     tracking.stockProductId = savedProduct.id;
     await this.trackingRepository.save(tracking);

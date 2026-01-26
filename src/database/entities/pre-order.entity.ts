@@ -3,7 +3,11 @@ import { BaseEntity } from './base.entity';
 import { Product } from './product.entity';
 import { ProductVariant } from './product-variant.entity';
 import { Customer } from './customer.entity';
-import { OrderStatus, PaymentMethod, EmiDuration } from '../../common/constants';
+import {
+  OrderStatus,
+  PaymentMethod,
+  EmiDuration,
+} from '../../common/constants';
 
 @Entity('pre_orders')
 export class PreOrder extends BaseEntity {

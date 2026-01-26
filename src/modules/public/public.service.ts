@@ -51,7 +51,16 @@ export class PublicService {
       search?: string;
     },
   ) {
-    const { page = 1, limit = 12, category, brandId, condition, minPrice, maxPrice, search } = filterDto;
+    const {
+      page = 1,
+      limit = 12,
+      category,
+      brandId,
+      condition,
+      minPrice,
+      maxPrice,
+      search,
+    } = filterDto;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.productRepository
@@ -98,14 +107,22 @@ export class PublicService {
     };
   }
 
-  async getPhones(filterDto: PaginationDto & { brandId?: string; condition?: ProductCondition; sort?: string }) {
+  async getPhones(
+    filterDto: PaginationDto & {
+      brandId?: string;
+      condition?: ProductCondition;
+      sort?: string;
+    },
+  ) {
     const { page = 1, limit = 12, brandId, condition, sort } = filterDto;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.brand', 'brand')
-      .where('product.category = :category', { category: ProductCategory.PHONE })
+      .where('product.category = :category', {
+        category: ProductCategory.PHONE,
+      })
       .andWhere('product.status = :status', { status: ProductStatus.IN_STOCK });
 
     if (brandId) {
@@ -130,7 +147,10 @@ export class PublicService {
         queryBuilder.orderBy('product.createdAt', 'DESC');
     }
 
-    const [products, total] = await queryBuilder.skip(skip).take(limit).getManyAndCount();
+    const [products, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
 
     return {
       data: products,
@@ -138,17 +158,33 @@ export class PublicService {
     };
   }
 
-  async getAccessories(filterDto: PaginationDto & { accessoryType?: string; minPrice?: number; maxPrice?: number }) {
-    const { page = 1, limit = 12, accessoryType, minPrice, maxPrice } = filterDto;
+  async getAccessories(
+    filterDto: PaginationDto & {
+      accessoryType?: string;
+      minPrice?: number;
+      maxPrice?: number;
+    },
+  ) {
+    const {
+      page = 1,
+      limit = 12,
+      accessoryType,
+      minPrice,
+      maxPrice,
+    } = filterDto;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.productRepository
       .createQueryBuilder('product')
-      .where('product.category = :category', { category: ProductCategory.ACCESSORIES })
+      .where('product.category = :category', {
+        category: ProductCategory.ACCESSORIES,
+      })
       .andWhere('product.status = :status', { status: ProductStatus.IN_STOCK });
 
     if (accessoryType) {
-      queryBuilder.andWhere('product.accessoryType = :accessoryType', { accessoryType });
+      queryBuilder.andWhere('product.accessoryType = :accessoryType', {
+        accessoryType,
+      });
     }
 
     if (minPrice) {
@@ -224,7 +260,7 @@ export class PublicService {
     return product;
   }
 
-  async calculateEmi(
+  calculateEmi(
     totalPrice: number,
     downPayment: number,
     duration: EmiDuration,
@@ -240,7 +276,9 @@ export class PublicService {
       totalPayable = totalPrice;
     } else {
       monthlyInstallment =
-        (remainingAmount * monthlyInterest * Math.pow(1 + monthlyInterest, duration)) /
+        (remainingAmount *
+          monthlyInterest *
+          Math.pow(1 + monthlyInterest, duration)) /
         (Math.pow(1 + monthlyInterest, duration) - 1);
       totalPayable = downPayment + monthlyInstallment * duration;
     }
@@ -273,7 +311,6 @@ export class PublicService {
     paymentMethod?: PaymentMethod;
     note?: string;
   }) {
-    // Find or create customer
     let customer = await this.customerRepository.findOne({
       where: { phone: data.customerPhone },
     });
@@ -291,7 +328,7 @@ export class PublicService {
     let totalPayableWithEmi: number | undefined;
 
     if (data.isEmi && data.emiDuration && data.downPayment !== undefined) {
-      const emiCalc = await this.calculateEmi(
+      const emiCalc = this.calculateEmi(
         data.totalPrice,
         data.downPayment,
         data.emiDuration,

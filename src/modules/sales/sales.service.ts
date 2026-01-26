@@ -42,7 +42,6 @@ export class SalesService {
     await queryRunner.startTransaction();
 
     try {
-      // Find or create customer
       let customer = await this.customerRepository.findOne({
         where: { phone: createSaleDto.customerPhone },
       });
@@ -61,7 +60,6 @@ export class SalesService {
         customer = await queryRunner.manager.save(customer);
       }
 
-      // Calculate totals and validate stock
       let subtotal = 0;
       const saleItems: Partial<SaleItem>[] = [];
 
@@ -80,11 +78,7 @@ export class SalesService {
           );
         }
 
-        // Phone quantity should always be 1
-        if (
-          product.category === ProductCategory.PHONE &&
-          item.quantity !== 1
-        ) {
+        if (product.category === ProductCategory.PHONE && item.quantity !== 1) {
           throw new BadRequestException('Phone quantity must be 1');
         }
 
@@ -102,7 +96,6 @@ export class SalesService {
             item.customWarrantyText || product.customWarrantyText,
         });
 
-        // Update stock
         product.stockQty -= item.quantity;
         if (product.category === ProductCategory.PHONE) {
           product.status = ProductStatus.SOLD;
@@ -112,7 +105,6 @@ export class SalesService {
         await queryRunner.manager.save(product);
       }
 
-      // Calculate discount
       let discountAmount = 0;
       if (createSaleDto.discountType && createSaleDto.discountValue) {
         if (createSaleDto.discountType === 'fixed') {
@@ -126,12 +118,9 @@ export class SalesService {
       const dueAmount = grandTotal - createSaleDto.paidAmount;
 
       if (createSaleDto.paidAmount > grandTotal) {
-        throw new BadRequestException(
-          'Paid amount cannot exceed grand total',
-        );
+        throw new BadRequestException('Paid amount cannot exceed grand total');
       }
 
-      // Determine payment status
       let status: PaymentStatus;
       if (dueAmount === 0) {
         status = PaymentStatus.PAID;
@@ -141,7 +130,6 @@ export class SalesService {
         status = PaymentStatus.DUE;
       }
 
-      // Create sale
       const invoiceNo = generateInvoiceNumber();
       const saleData: Partial<Sale> = {
         invoiceNo,
@@ -168,7 +156,6 @@ export class SalesService {
       const sale = this.saleRepository.create(saleData);
       const savedSale = await queryRunner.manager.save(Sale, sale);
 
-      // Create sale items
       for (const item of saleItems) {
         const saleItem = this.saleItemRepository.create({
           ...item,
@@ -177,7 +164,6 @@ export class SalesService {
         await queryRunner.manager.save(SaleItem, saleItem);
       }
 
-      // Create initial payment record if paid amount > 0
       if (createSaleDto.paidAmount > 0) {
         const payment = this.paymentRepository.create({
           saleId: savedSale.id,
@@ -248,10 +234,7 @@ export class SalesService {
       });
     }
 
-    queryBuilder
-      .orderBy('sale.createdAt', 'DESC')
-      .skip(skip)
-      .take(limit);
+    queryBuilder.orderBy('sale.createdAt', 'DESC').skip(skip).take(limit);
 
     const [sales, total] = await queryBuilder.getManyAndCount();
 

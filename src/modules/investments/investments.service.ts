@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Investor, InvestmentPayout } from '../../database/entities';
@@ -44,7 +48,9 @@ export class InvestmentsService {
     return this.investorRepository.save(investor);
   }
 
-  async findAll(paginationDto: PaginationDto & { search?: string; status?: InvestorStatus }) {
+  async findAll(
+    paginationDto: PaginationDto & { search?: string; status?: InvestorStatus },
+  ) {
     const { page = 1, limit = 10, search, status } = paginationDto;
     const skip = (page - 1) * limit;
 
@@ -96,13 +102,15 @@ export class InvestmentsService {
       where: { id: investorId },
     });
 
-    const payoutResult = await this.payoutRepository
+    const payoutResult = (await this.payoutRepository
       .createQueryBuilder('payout')
       .select('SUM(payout.amount)', 'totalPaid')
       .where('payout.investorId = :investorId', { investorId })
-      .getRawOne();
+      .getRawOne()) as {
+      totalPaid?: string | null;
+    } | null;
 
-    const totalPaid = parseFloat(payoutResult?.totalPaid || '0');
+    const totalPaid = parseFloat(String(payoutResult?.totalPaid || '0'));
 
     let totalPayable = 0;
     if (investor?.investmentType === InvestmentType.FIXED_PROFIT) {
@@ -143,7 +151,6 @@ export class InvestmentsService {
 
     await this.payoutRepository.save(payout);
 
-    // Check if all payouts complete
     const newTotals = await this.getInvestorTotals(investorId);
     if (newTotals.remainingPayable === 0) {
       investor.status = InvestorStatus.CLOSED;

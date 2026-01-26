@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsArray,
   IsBoolean,
   IsEnum,
   IsNotEmpty,
@@ -202,7 +201,9 @@ export class CreateProductDto {
   @IsOptional()
   supplierId?: string;
 
-  @ApiPropertyOptional({ description: 'Supplier name (creates new if not exists)' })
+  @ApiPropertyOptional({
+    description: 'Supplier name (creates new if not exists)',
+  })
   @IsString()
   @IsOptional()
   supplierName?: string;

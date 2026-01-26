@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   Sale,
   Expense,
@@ -9,7 +9,6 @@ import {
   Supplier,
   ServiceJob,
 } from '../../database/entities';
-import { PaymentStatus } from '../../common/constants';
 
 @Injectable()
 export class DashboardService {
@@ -28,15 +27,7 @@ export class DashboardService {
     private serviceJobRepository: Repository<ServiceJob>,
   ) {}
 
-  async getDashboardStats(
-    branchId?: string,
-    startDate?: Date,
-    endDate?: Date,
-  ) {
-    const dateFilter = startDate && endDate ? { createdAt: Between(startDate, endDate) } : {};
-    const branchFilter = branchId ? { branchId } : {};
-
-    // Sales Stats
+  async getDashboardStats(branchId?: string, startDate?: Date, endDate?: Date) {
     const salesQuery = this.saleRepository
       .createQueryBuilder('sale')
       .select('SUM(sale.grandTotal)', 'totalSales')
@@ -54,73 +45,84 @@ export class DashboardService {
       });
     }
 
-    const salesStats = await salesQuery.getRawOne();
+    const salesStats = (await salesQuery.getRawOne()) as {
+      totalSales?: string | null;
+      instantPaid?: string | null;
+      totalDueSale?: string | null;
+    } | null;
 
-    // Due Paid (from DueCollections during this period)
     const duePaidQuery = this.saleRepository
       .createQueryBuilder('sale')
       .leftJoin('sale.payments', 'payment')
       .select('SUM(payment.amount)', 'duePaid');
 
     if (startDate && endDate) {
-      duePaidQuery.where('payment.paymentDate BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      });
+      duePaidQuery.where(
+        'payment.paymentDate BETWEEN :startDate AND :endDate',
+        {
+          startDate,
+          endDate,
+        },
+      );
     }
 
-    const duePaidStats = await duePaidQuery.getRawOne();
+    const duePaidStats = (await duePaidQuery.getRawOne()) as {
+      duePaid?: string | null;
+    } | null;
 
-    // Expense Stats
     const expenseQuery = this.expenseRepository
       .createQueryBuilder('expense')
       .select('SUM(expense.amount)', 'totalExpense');
 
     if (startDate && endDate) {
-      expenseQuery.where('expense.expenseDate BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      });
+      expenseQuery.where(
+        'expense.expenseDate BETWEEN :startDate AND :endDate',
+        {
+          startDate,
+          endDate,
+        },
+      );
     }
 
-    const expenseStats = await expenseQuery.getRawOne();
+    const expenseStats = (await expenseQuery.getRawOne()) as {
+      totalExpense?: string | null;
+    } | null;
 
-    // Calculate profit
-    const totalSales = parseFloat(salesStats?.totalSales || '0');
-    const totalExpense = parseFloat(expenseStats?.totalExpense || '0');
+    const totalSales = parseFloat(String(salesStats?.totalSales || '0'));
+    const totalExpense = parseFloat(String(expenseStats?.totalExpense || '0'));
 
-    // Get purchase cost for sold items
     const purchaseCostQuery = this.saleRepository
       .createQueryBuilder('sale')
       .leftJoin('sale.items', 'item')
       .leftJoin('item.product', 'product')
-      .select('SUM(product.purchasePrice * item.quantity)', 'totalPurchaseCost');
+      .select(
+        'SUM(product.purchasePrice * item.quantity)',
+        'totalPurchaseCost',
+      );
 
     if (branchId) {
       purchaseCostQuery.where('sale.branchId = :branchId', { branchId });
     }
 
     if (startDate && endDate) {
-      purchaseCostQuery.andWhere('sale.createdAt BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      });
+      purchaseCostQuery.andWhere(
+        'sale.createdAt BETWEEN :startDate AND :endDate',
+        {
+          startDate,
+          endDate,
+        },
+      );
     }
 
-    const purchaseCostStats = await purchaseCostQuery.getRawOne();
-    const totalPurchaseCost = parseFloat(purchaseCostStats?.totalPurchaseCost || '0');
+    const purchaseCostStats = (await purchaseCostQuery.getRawOne()) as {
+      totalPurchaseCost?: string | null;
+    } | null;
+    const totalPurchaseCost = parseFloat(
+      String(purchaseCostStats?.totalPurchaseCost || '0'),
+    );
 
     const totalProfit = totalSales - totalPurchaseCost - totalExpense;
 
-    // Supplier Due
-    const supplierDueQuery = this.productRepository
-      .createQueryBuilder('product')
-      .select('SUM(product.purchasePrice)', 'totalPurchase')
-      .where('product.supplierId IS NOT NULL');
-
-    const supplierPurchase = await supplierDueQuery.getRawOne();
-
-    // Service Profit
     const serviceQuery = this.serviceJobRepository
       .createQueryBuilder('job')
       .select('SUM(job.paidAmount)', 'serviceProfit');
@@ -132,21 +134,24 @@ export class DashboardService {
       });
     }
 
-    const serviceStats = await serviceQuery.getRawOne();
+    const serviceStats = (await serviceQuery.getRawOne()) as {
+      serviceProfit?: string | null;
+    } | null;
 
-    // Return Stats (simplified - could be enhanced)
-    const totalReturn = 0; // Would need a returns table
+    const totalReturn = 0;
 
     return {
       totalSales,
-      instantPaid: parseFloat(salesStats?.instantPaid || '0'),
-      totalDueSale: parseFloat(salesStats?.totalDueSale || '0'),
-      duePaid: parseFloat(duePaidStats?.duePaid || '0'),
+      instantPaid: parseFloat(String(salesStats?.instantPaid || '0')),
+      totalDueSale: parseFloat(String(salesStats?.totalDueSale || '0')),
+      duePaid: parseFloat(String(duePaidStats?.duePaid || '0')),
       totalReturn,
       totalExpense,
       totalProfit,
-      supplierDue: 0, // Would need supplier payment tracking
-      mobileServiceProfit: parseFloat(serviceStats?.serviceProfit || '0'),
+      supplierDue: 0,
+      mobileServiceProfit: parseFloat(
+        String(serviceStats?.serviceProfit || '0'),
+      ),
     };
   }
 

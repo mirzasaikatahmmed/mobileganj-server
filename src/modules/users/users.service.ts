@@ -36,6 +36,7 @@ export class UsersService {
     });
 
     const savedUser = await this.userRepository.save(user);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...result } = savedUser;
     return result;
   }
@@ -115,6 +116,7 @@ export class UsersService {
 
     Object.assign(user, updateUserDto);
     const savedUser = await this.userRepository.save(user);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...result } = savedUser;
     return result;
   }

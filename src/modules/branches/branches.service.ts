@@ -37,7 +37,7 @@ export class BranchesService {
   }
 
   async remove(id: string) {
-    const branch = await this.findOne(id);
+    await this.findOne(id);
     await this.branchRepository.softDelete(id);
     return { message: 'Branch deleted successfully' };
   }

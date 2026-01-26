@@ -1,10 +1,24 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
+import { seedSuperAdmin } from './database/seeders/superadmin.seeder';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Initialize SuperAdmin on app startup
+  try {
+    const dataSource = app.get(DataSource);
+    // Wait for connection to be established
+    if (!dataSource.isInitialized) {
+      await dataSource.initialize();
+    }
+    await seedSuperAdmin(dataSource);
+  } catch (error) {
+    console.error('Error seeding SuperAdmin:', error);
+  }
 
   app.enableCors({
     origin: true,
@@ -46,8 +60,9 @@ async function bootstrap() {
 All endpoints (except Public API) require JWT authentication.
 Use the \`/api/auth/login\` endpoint to get a token.
 
-### Default Admin:
-Create an admin user using database seeder or first registration.
+### Default Users:
+- **SuperAdmin**: Automatically created on app startup (credentials in .env file)
+- **Admin**: Create an admin user using database seeder or first registration
       `,
     )
     .setVersion('1.0')
@@ -88,4 +103,4 @@ Create an admin user using database seeder or first registration.
   ╚═══════════════════════════════════════════════════════════╝
   `);
 }
-bootstrap();
+void bootstrap();

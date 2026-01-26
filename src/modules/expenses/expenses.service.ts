@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { Expense, ExpenseCategory } from '../../database/entities';
 import { PaymentMethod, ExpenseType } from '../../common/constants';
 import { PaginationDto } from '../../common/dto';
@@ -14,7 +14,6 @@ export class ExpensesService {
     private categoryRepository: Repository<ExpenseCategory>,
   ) {}
 
-  // Categories
   async createCategory(data: { name: string; type: ExpenseType }) {
     const category = this.categoryRepository.create(data);
     return this.categoryRepository.save(category);
@@ -50,7 +49,6 @@ export class ExpensesService {
     }
   }
 
-  // Expenses
   async create(
     data: {
       expenseDate: string;
@@ -84,7 +82,14 @@ export class ExpensesService {
       paymentMethod?: PaymentMethod;
     },
   ) {
-    const { page = 1, limit = 10, startDate, endDate, categoryId, paymentMethod } = filterDto;
+    const {
+      page = 1,
+      limit = 10,
+      startDate,
+      endDate,
+      categoryId,
+      paymentMethod,
+    } = filterDto;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.expenseRepository
@@ -93,10 +98,13 @@ export class ExpensesService {
       .leftJoinAndSelect('expense.addedBy', 'addedBy');
 
     if (startDate && endDate) {
-      queryBuilder.andWhere('expense.expenseDate BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      });
+      queryBuilder.andWhere(
+        'expense.expenseDate BETWEEN :startDate AND :endDate',
+        {
+          startDate,
+          endDate,
+        },
+      );
     }
 
     if (categoryId) {
@@ -104,7 +112,9 @@ export class ExpensesService {
     }
 
     if (paymentMethod) {
-      queryBuilder.andWhere('expense.paymentMethod = :paymentMethod', { paymentMethod });
+      queryBuilder.andWhere('expense.paymentMethod = :paymentMethod', {
+        paymentMethod,
+      });
     }
 
     const [expenses, total] = await queryBuilder
@@ -128,7 +138,12 @@ export class ExpensesService {
     return expense;
   }
 
-  async update(id: string, data: Partial<Expense>, userId: string, isAdmin: boolean) {
+  async update(
+    id: string,
+    data: Partial<Expense>,
+    userId: string,
+    isAdmin: boolean,
+  ) {
     const expense = await this.findOne(id);
 
     if (!isAdmin && expense.addedById !== userId) {
@@ -151,47 +166,54 @@ export class ExpensesService {
       .select('SUM(expense.amount)', 'total');
 
     if (startDate && endDate) {
-      queryBuilder.where('expense.expenseDate BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      });
+      queryBuilder.where(
+        'expense.expenseDate BETWEEN :startDate AND :endDate',
+        {
+          startDate,
+          endDate,
+        },
+      );
     }
 
-    const totalResult = await queryBuilder.getRawOne();
+    const totalResult = (await queryBuilder.getRawOne()) as {
+      total?: string | null;
+    } | null;
 
-    // This month
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    const thisMonthResult = await this.expenseRepository
+    const thisMonthResult = (await this.expenseRepository
       .createQueryBuilder('expense')
       .select('SUM(expense.amount)', 'total')
       .where('expense.expenseDate BETWEEN :monthStart AND :monthEnd', {
         monthStart,
         monthEnd,
       })
-      .getRawOne();
+      .getRawOne()) as {
+      total?: string | null;
+    } | null;
 
-    // Today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const todayResult = await this.expenseRepository
+    const todayResult = (await this.expenseRepository
       .createQueryBuilder('expense')
       .select('SUM(expense.amount)', 'total')
       .where('expense.expenseDate BETWEEN :today AND :todayEnd', {
         today,
         todayEnd,
       })
-      .getRawOne();
+      .getRawOne()) as {
+      total?: string | null;
+    } | null;
 
     return {
-      totalExpense: parseFloat(totalResult?.total || '0'),
-      thisMonthExpense: parseFloat(thisMonthResult?.total || '0'),
-      todayExpense: parseFloat(todayResult?.total || '0'),
+      totalExpense: parseFloat(String(totalResult?.total || '0')),
+      thisMonthExpense: parseFloat(String(thisMonthResult?.total || '0')),
+      todayExpense: parseFloat(String(todayResult?.total || '0')),
     };
   }
 

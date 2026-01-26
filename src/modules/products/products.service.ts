@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   Product,
   Brand,
@@ -53,11 +53,11 @@ export class ProductsService {
     });
   }
 
-  async create(createProductDto: CreateProductDto, userId: string) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async create(createProductDto: CreateProductDto, _userId: string) {
     const { localSellerInfo, supplierName, supplierPhone, ...productData } =
       createProductDto;
 
-    // Validate based on category and phone type
     if (createProductDto.category === ProductCategory.PHONE) {
       if (!createProductDto.phoneType) {
         throw new BadRequestException('Phone type is required for phones');
@@ -73,17 +73,13 @@ export class ProductsService {
         );
       }
 
-      if (
-        createProductDto.phoneType === PhoneType.LOCAL &&
-        !localSellerInfo
-      ) {
+      if (createProductDto.phoneType === PhoneType.LOCAL && !localSellerInfo) {
         throw new BadRequestException(
           'Local seller info is required for local phones',
         );
       }
     }
 
-    // Handle supplier creation/lookup for overseas phones
     let supplierId = createProductDto.supplierId;
     if (
       createProductDto.category === ProductCategory.PHONE &&
@@ -106,7 +102,6 @@ export class ProductsService {
       supplierId = supplier.id;
     }
 
-    // Handle local seller creation for local phones
     let localSellerId: string | undefined;
     if (
       createProductDto.category === ProductCategory.PHONE &&
@@ -119,7 +114,6 @@ export class ProductsService {
       localSellerId = savedLocalSeller.id;
     }
 
-    // Generate barcode
     const barcode = generateBarcode(
       createProductDto.category === ProductCategory.PHONE ? 'PH' : 'AC',
     );
@@ -203,10 +197,13 @@ export class ProductsService {
     }
 
     if (startDate && endDate) {
-      queryBuilder.andWhere('product.createdAt BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      });
+      queryBuilder.andWhere(
+        'product.createdAt BETWEEN :startDate AND :endDate',
+        {
+          startDate,
+          endDate,
+        },
+      );
     }
 
     queryBuilder.orderBy('product.createdAt', 'DESC').skip(skip).take(limit);
@@ -259,7 +256,6 @@ export class ProductsService {
     const product = await this.findOne(id);
     Object.assign(product, updateProductDto);
 
-    // Update status based on stock
     if (updateProductDto.stockQty !== undefined) {
       product.status =
         updateProductDto.stockQty > 0
@@ -271,17 +267,19 @@ export class ProductsService {
   }
 
   async remove(id: string) {
-    const product = await this.findOne(id);
+    await this.findOne(id);
     await this.productRepository.softDelete(id);
     return { message: 'Product deleted successfully' };
   }
 
   async getSummary() {
     const totalProducts = await this.productRepository.count();
-    const totalStockQty = await this.productRepository
+    const totalStockQty = (await this.productRepository
       .createQueryBuilder('product')
       .select('SUM(product.stockQty)', 'total')
-      .getRawOne();
+      .getRawOne()) as {
+      total?: string | null;
+    } | null;
 
     const lowStockItems = await this.productRepository
       .createQueryBuilder('product')
@@ -295,13 +293,12 @@ export class ProductsService {
 
     return {
       totalProducts,
-      totalStockQty: parseInt(totalStockQty?.total || '0'),
+      totalStockQty: parseInt(String(totalStockQty?.total || '0')),
       lowStockItems,
       outOfStockItems,
     };
   }
 
-  // Damage management
   async createDamage(createDamageDto: CreateDamageDto, userId: string) {
     const product = await this.findOne(createDamageDto.productId);
 
@@ -310,7 +307,6 @@ export class ProductsService {
       reportedById: userId,
     });
 
-    // Update product status to damaged
     product.status = ProductStatus.DAMAGED;
     await this.productRepository.save(product);
 

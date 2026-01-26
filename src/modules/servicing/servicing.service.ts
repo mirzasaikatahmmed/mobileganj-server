@@ -68,7 +68,6 @@ export class ServicingService {
     await queryRunner.startTransaction();
 
     try {
-      // Find or create customer
       let customer = await this.customerRepository.findOne({
         where: { phone: data.customerPhone },
       });
@@ -84,8 +83,7 @@ export class ServicingService {
         customer = await queryRunner.manager.save(customer);
       }
 
-      const totalAmount =
-        data.serviceCharge + (data.partsCost || 0);
+      const totalAmount = data.serviceCharge + (data.partsCost || 0);
       const paidAmount = data.paidAmount || 0;
       const dueAmount = totalAmount - paidAmount;
 
@@ -114,7 +112,6 @@ export class ServicingService {
       const job = this.jobRepository.create(jobData);
       const savedJob = await queryRunner.manager.save(ServiceJob, job);
 
-      // Create parts
       if (data.parts && data.parts.length > 0) {
         for (const part of data.parts) {
           const totalBorrowAmount =
@@ -161,7 +158,15 @@ export class ServicingService {
       endDate?: string;
     },
   ) {
-    const { page = 1, limit = 10, status, technicianName, dueOnly, startDate, endDate } = filterDto;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      technicianName,
+      dueOnly,
+      startDate,
+      endDate,
+    } = filterDto;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.jobRepository
@@ -252,26 +257,32 @@ export class ServicingService {
   }
 
   async getSummary() {
-    const totalIncome = await this.jobRepository
+    const totalIncome = (await this.jobRepository
       .createQueryBuilder('job')
       .select('SUM(job.paidAmount)', 'total')
-      .getRawOne();
+      .getRawOne()) as {
+      total?: string | null;
+    } | null;
 
-    const totalDue = await this.jobRepository
+    const totalDue = (await this.jobRepository
       .createQueryBuilder('job')
       .select('SUM(job.dueAmount)', 'total')
-      .getRawOne();
+      .getRawOne()) as {
+      total?: string | null;
+    } | null;
 
-    const borrowedPartsDue = await this.partRepository
+    const borrowedPartsDue = (await this.partRepository
       .createQueryBuilder('part')
       .select('SUM(part.dueAmount)', 'total')
       .where('part.usageType = :type', { type: PartsUsageType.BORROWED })
-      .getRawOne();
+      .getRawOne()) as {
+      total?: string | null;
+    } | null;
 
     return {
-      totalServiceIncome: parseFloat(totalIncome?.total || '0'),
-      totalServiceDue: parseFloat(totalDue?.total || '0'),
-      borrowedPartsDue: parseFloat(borrowedPartsDue?.total || '0'),
+      totalServiceIncome: parseFloat(String(totalIncome?.total || '0')),
+      totalServiceDue: parseFloat(String(totalDue?.total || '0')),
+      borrowedPartsDue: parseFloat(String(borrowedPartsDue?.total || '0')),
     };
   }
 }
