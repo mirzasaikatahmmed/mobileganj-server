@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import {
   ServiceStatus,
@@ -11,7 +11,6 @@ import { ServicePart } from './service-part.entity';
 import { ServiceDueCollection } from './service-due-collection.entity';
 
 @Entity('service_jobs')
-@Index(['jobId'])
 export class ServiceJob extends BaseEntity {
   @Column({ name: 'job_id', unique: true, length: 50 })
   jobId: string;
