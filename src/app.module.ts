@@ -5,6 +5,7 @@ import { APP_GUARD } from '@nestjs/core';
 
 import { databaseConfig, jwtConfig, appConfig } from './config';
 import { JwtAuthGuard } from './common/guards';
+import { AppController } from './app.controller';
 
 import * as entities from './database/entities';
 
@@ -60,6 +61,7 @@ import { PublicModule } from './modules/public/public.module';
     DashboardModule,
     PublicModule,
   ],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,

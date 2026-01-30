@@ -24,7 +24,7 @@ services:
     container_name: mobile_ganj_app_prod
     restart: always
     ports:
-      - '5060:3000'
+      - '5062:3000'
     env_file:
       - .env
     environment:
