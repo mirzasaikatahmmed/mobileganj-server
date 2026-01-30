@@ -29,14 +29,10 @@ export async function seedSuperAdmin(dataSource: DataSource): Promise<void> {
     });
 
     await userRepository.save(superAdmin);
-    console.log(`✅ SuperAdmin user created: ${superAdminEmail}`);
   } else {
     if (existingSuperAdmin.role !== UserRole.SUPERADMIN) {
       existingSuperAdmin.role = UserRole.SUPERADMIN;
       await userRepository.save(existingSuperAdmin);
-      console.log(`✅ Existing user updated to SuperAdmin: ${superAdminEmail}`);
-    } else {
-      console.log(`ℹ️  SuperAdmin user already exists: ${superAdminEmail}`);
     }
   }
 }

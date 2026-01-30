@@ -22,6 +22,7 @@ import { ServicingModule } from './modules/servicing/servicing.module';
 import { OverseasTrackingModule } from './modules/overseas-tracking/overseas-tracking.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { PublicModule } from './modules/public/public.module';
+import { SeedModule } from './database/seeds';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { PublicModule } from './modules/public/public.module';
     OverseasTrackingModule,
     DashboardModule,
     PublicModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [

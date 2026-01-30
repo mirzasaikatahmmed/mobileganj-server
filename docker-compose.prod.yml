@@ -30,6 +30,7 @@ services:
     environment:
       DB_HOST: mysql
       DB_PORT: 3306
+      AUTO_SEED: ${AUTO_SEED:-true}
     volumes:
       - ./uploads:/app/uploads
     depends_on:

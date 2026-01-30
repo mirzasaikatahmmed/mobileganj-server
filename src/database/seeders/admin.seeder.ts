@@ -23,8 +23,5 @@ export async function seedAdmin(dataSource: DataSource): Promise<void> {
     });
 
     await userRepository.save(admin);
-    console.log('Admin user created: admin@mobileganj.com / admin123');
-  } else {
-    console.log('Admin user already exists');
   }
 }
