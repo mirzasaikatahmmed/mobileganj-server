@@ -42,7 +42,7 @@ import { SeedModule } from './database/seeds';
         database: configService.get<string>('database.database'),
         entities: Object.values(entities),
         synchronize: configService.get<boolean>('database.synchronize'),
-        logging: configService.get<boolean>('database.logging'),
+        logging: false,
         charset: 'utf8mb4',
       }),
       inject: [ConfigService],

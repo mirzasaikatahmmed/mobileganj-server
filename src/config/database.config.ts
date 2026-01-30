@@ -8,5 +8,4 @@ export default registerAs('database', () => ({
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_DATABASE || 'mobile_ganj',
   synchronize: process.env.DB_SYNCHRONIZE === 'true',
-  logging: process.env.DB_LOGGING === 'true',
 }));
