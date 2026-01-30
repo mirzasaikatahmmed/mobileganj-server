@@ -24,9 +24,7 @@ services:
       - mobile_ganj_network
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USERNAME}/${PACKAGE_NAME}:latest
     container_name: mobile_ganj_app_prod
     restart: always
     ports:
