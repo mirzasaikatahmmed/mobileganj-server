@@ -20,7 +20,14 @@ export class PreOrdersService {
       endDate?: string;
     },
   ) {
-    const { page = 1, limit = 10, status, search, startDate, endDate } = paginationDto;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      search,
+      startDate,
+      endDate,
+    } = paginationDto;
     const skip = (page - 1) * limit;
 
     const qb = this.preOrderRepository
@@ -39,7 +46,10 @@ export class PreOrdersService {
     }
 
     if (startDate && endDate) {
-      qb.andWhere('preOrder.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate });
+      qb.andWhere('preOrder.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
     }
 
     const [data, total] = await qb
@@ -98,17 +108,19 @@ export class PreOrdersService {
       .groupBy('preOrder.status')
       .getRawMany();
 
-    const totals = await this.preOrderRepository
+    const totals = (await this.preOrderRepository
       .createQueryBuilder('preOrder')
       .select('COUNT(*)', 'totalOrders')
       .addSelect('SUM(preOrder.bookingAmount)', 'totalBookingCollected')
       .addSelect('SUM(preOrder.totalPrice)', 'totalOrderValue')
-      .getRawOne() as Record<string, string | null> | null;
+      .getRawOne()) as Record<string, string | null> | null;
 
     return {
       statusCounts,
       totalOrders: parseInt(String(totals?.totalOrders || '0')),
-      totalBookingCollected: parseFloat(String(totals?.totalBookingCollected || '0')),
+      totalBookingCollected: parseFloat(
+        String(totals?.totalBookingCollected || '0'),
+      ),
       totalOrderValue: parseFloat(String(totals?.totalOrderValue || '0')),
     };
   }

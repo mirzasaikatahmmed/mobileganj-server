@@ -65,7 +65,10 @@ export class StockTransferService {
         createdById: userId,
       });
 
-      const savedTransfer = await queryRunner.manager.save(StockTransfer, transfer);
+      const savedTransfer = await queryRunner.manager.save(
+        StockTransfer,
+        transfer,
+      );
 
       for (const item of data.items) {
         const transferItem = this.transferItemRepository.create({
@@ -93,7 +96,13 @@ export class StockTransferService {
       toBranchId?: string;
     },
   ) {
-    const { page = 1, limit = 10, status, fromBranchId, toBranchId } = paginationDto;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      fromBranchId,
+      toBranchId,
+    } = paginationDto;
     const skip = (page - 1) * limit;
 
     const qb = this.transferRepository
@@ -105,8 +114,10 @@ export class StockTransferService {
       .leftJoinAndSelect('items.product', 'product');
 
     if (status) qb.andWhere('transfer.status = :status', { status });
-    if (fromBranchId) qb.andWhere('transfer.fromBranchId = :fromBranchId', { fromBranchId });
-    if (toBranchId) qb.andWhere('transfer.toBranchId = :toBranchId', { toBranchId });
+    if (fromBranchId)
+      qb.andWhere('transfer.fromBranchId = :fromBranchId', { fromBranchId });
+    if (toBranchId)
+      qb.andWhere('transfer.toBranchId = :toBranchId', { toBranchId });
 
     const [data, total] = await qb
       .orderBy('transfer.createdAt', 'DESC')
@@ -123,7 +134,13 @@ export class StockTransferService {
   async findOne(id: string) {
     const transfer = await this.transferRepository.findOne({
       where: { id },
-      relations: ['fromBranch', 'toBranch', 'createdBy', 'items', 'items.product'],
+      relations: [
+        'fromBranch',
+        'toBranch',
+        'createdBy',
+        'items',
+        'items.product',
+      ],
     });
 
     if (!transfer) {
@@ -133,7 +150,8 @@ export class StockTransferService {
     return transfer;
   }
 
-  async approve(id: string, userId: string) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async approve(id: string, _userId: string) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();

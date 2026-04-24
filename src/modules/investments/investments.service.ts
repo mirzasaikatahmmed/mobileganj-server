@@ -135,7 +135,9 @@ export class InvestmentsService {
     userId: string,
   ) {
     const investor = await this.findOne(investorId);
-    const investorEntity = await this.investorRepository.findOne({ where: { id: investorId } });
+    const investorEntity = await this.investorRepository.findOne({
+      where: { id: investorId },
+    });
 
     // For profit_share investors, remainingPayable is dynamic — skip the check
     if (
