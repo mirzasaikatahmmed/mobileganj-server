@@ -183,6 +183,52 @@ export class AuthService {
     return result;
   }
 
+  async registerPublicUser(
+    registerDto: RegisterDto,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    const existingUser = await this.userRepository.findOne({
+      where: { email: registerDto.email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+
+    const user = this.userRepository.create({
+      name: registerDto.name,
+      email: registerDto.email,
+      phone: registerDto.phone,
+      password: hashedPassword,
+      role: UserRole.USER,
+      isActive: true,
+    });
+
+    const savedUser = await this.userRepository.save(user);
+    const { password: _pw, ...userWithoutPassword } = savedUser;
+
+    const payload = {
+      sub: savedUser.id,
+      email: savedUser.email,
+      role: savedUser.role,
+    };
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = await this.generateRefreshToken(
+      savedUser.id,
+      ipAddress,
+      userAgent,
+    );
+
+    return {
+      user: userWithoutPassword,
+      accessToken,
+      refreshToken: refreshToken.token,
+    };
+  }
+
   async getProfile(userId: string) {
     const user = await this.userRepository.findOne({
       where: { id: userId },

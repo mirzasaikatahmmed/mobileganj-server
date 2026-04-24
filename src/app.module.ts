@@ -22,6 +22,10 @@ import { ServicingModule } from './modules/servicing/servicing.module';
 import { OverseasTrackingModule } from './modules/overseas-tracking/overseas-tracking.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { PublicModule } from './modules/public/public.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { PreOrdersModule } from './modules/pre-orders/pre-orders.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { StockTransferModule } from './modules/stock-transfer/stock-transfer.module';
 import { SeedModule } from './database/seeds';
 
 @Module({
@@ -61,6 +65,10 @@ import { SeedModule } from './database/seeds';
     OverseasTrackingModule,
     DashboardModule,
     PublicModule,
+    ReportsModule,
+    PreOrdersModule,
+    SettingsModule,
+    StockTransferModule,
     SeedModule,
   ],
   controllers: [AppController],

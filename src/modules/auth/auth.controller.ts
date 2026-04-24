@@ -73,6 +73,30 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
+  @Public()
+  @Post('register/user')
+  @ApiOperation({ summary: 'Public user self-registration' })
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({
+    status: 201,
+    description: 'User registered successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        user: { type: 'object' },
+        accessToken: { type: 'string' },
+        refreshToken: { type: 'string' },
+      },
+    },
+  })
+  async registerUser(
+    @Body() registerDto: RegisterDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent?: string,
+  ) {
+    return this.authService.registerPublicUser(registerDto, ipAddress, userAgent);
+  }
+
   @Get('profile')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })

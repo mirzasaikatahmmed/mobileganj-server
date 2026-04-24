@@ -2,6 +2,7 @@ export enum UserRole {
   SUPERADMIN = 'superadmin',
   ADMIN = 'admin',
   STAFF = 'staff',
+  USER = 'user',
 }
 
 export enum ProductCategory {
@@ -129,4 +130,10 @@ export enum EmiDuration {
   SIX_MONTHS = 6,
   NINE_MONTHS = 9,
   TWELVE_MONTHS = 12,
+}
+
+export enum StockTransferStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
 }

@@ -135,8 +135,13 @@ export class InvestmentsService {
     userId: string,
   ) {
     const investor = await this.findOne(investorId);
+    const investorEntity = await this.investorRepository.findOne({ where: { id: investorId } });
 
-    if (data.amount > investor.remainingPayable) {
+    // For profit_share investors, remainingPayable is dynamic — skip the check
+    if (
+      investorEntity?.investmentType === InvestmentType.FIXED_PROFIT &&
+      data.amount > investor.remainingPayable
+    ) {
       throw new BadRequestException('Payout amount exceeds remaining payable');
     }
 
