@@ -94,7 +94,11 @@ export class AuthController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent?: string,
   ) {
-    return this.authService.registerPublicUser(registerDto, ipAddress, userAgent);
+    return this.authService.registerPublicUser(
+      registerDto,
+      ipAddress,
+      userAgent,
+    );
   }
 
   @Get('profile')

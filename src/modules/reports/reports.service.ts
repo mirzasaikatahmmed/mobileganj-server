@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   Sale,
-  SaleItem,
   Payment,
   Product,
   Expense,
@@ -14,13 +13,41 @@ import {
   ServiceJob,
 } from '../../database/entities';
 
+export interface PaymentRow {
+  id: string;
+  date: string;
+  amount: string;
+  paymentMethod: string;
+  referenceNo: string;
+  customerName: string;
+  type: string;
+}
+
+export interface CustomerDueRow {
+  id: string;
+  name: string;
+  phone: string;
+  totalPurchase: string;
+  totalPaid: string;
+  totalDue: string;
+  nextDueDate: string;
+}
+
+export interface DayBookRow {
+  id: string;
+  referenceNo: string;
+  date: string;
+  description: string;
+  income: string;
+  expense: string;
+  type: string;
+}
+
 @Injectable()
 export class ReportsService {
   constructor(
     @InjectRepository(Sale)
     private saleRepository: Repository<Sale>,
-    @InjectRepository(SaleItem)
-    private saleItemRepository: Repository<SaleItem>,
     @InjectRepository(Payment)
     private paymentRepository: Repository<Payment>,
     @InjectRepository(Product)
@@ -39,7 +66,11 @@ export class ReportsService {
     private serviceJobRepository: Repository<ServiceJob>,
   ) {}
 
-  async getSalesReport(startDate?: string, endDate?: string, branchId?: string) {
+  async getSalesReport(
+    startDate?: string,
+    endDate?: string,
+    branchId?: string,
+  ) {
     const qb = this.saleRepository
       .createQueryBuilder('sale')
       .leftJoin('sale.items', 'item')
@@ -49,13 +80,19 @@ export class ReportsService {
       .addSelect('COUNT(DISTINCT sale.id)', 'invoices')
       .addSelect('SUM(item.quantity)', 'quantity')
       .addSelect('SUM(sale.grandTotal)', 'revenue')
-      .addSelect('SUM(sale.grandTotal - product.purchasePrice * item.quantity)', 'profit')
+      .addSelect(
+        'SUM(sale.grandTotal - product.purchasePrice * item.quantity)',
+        'profit',
+      )
       .addSelect('COUNT(DISTINCT sale.customerId)', 'customers')
       .groupBy('DATE(sale.saleDate)')
       .orderBy('DATE(sale.saleDate)', 'DESC');
 
     if (startDate && endDate) {
-      qb.where('sale.saleDate BETWEEN :startDate AND :endDate', { startDate, endDate });
+      qb.where('sale.saleDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
     }
     if (branchId) {
       qb.andWhere('sale.branchId = :branchId', { branchId });
@@ -63,16 +100,24 @@ export class ReportsService {
 
     const rows = await qb.getRawMany();
 
-    const summary = await this.saleRepository
+    const summary = (await this.saleRepository
       .createQueryBuilder('sale')
       .leftJoin('sale.items', 'item')
       .leftJoin('item.product', 'product')
       .select('SUM(sale.grandTotal)', 'totalRevenue')
-      .addSelect('SUM(sale.grandTotal - product.purchasePrice * item.quantity)', 'totalProfit')
+      .addSelect(
+        'SUM(sale.grandTotal - product.purchasePrice * item.quantity)',
+        'totalProfit',
+      )
       .addSelect('COUNT(DISTINCT sale.id)', 'totalInvoices')
       .addSelect('COUNT(DISTINCT sale.customerId)', 'totalCustomers')
-      .where(startDate && endDate ? 'sale.saleDate BETWEEN :startDate AND :endDate' : '1=1', { startDate, endDate })
-      .getRawOne() as Record<string, string | null> | null;
+      .where(
+        startDate && endDate
+          ? 'sale.saleDate BETWEEN :startDate AND :endDate'
+          : '1=1',
+        { startDate, endDate },
+      )
+      .getRawOne()) as Record<string, string | null> | null;
 
     return {
       data: rows,
@@ -85,7 +130,11 @@ export class ReportsService {
     };
   }
 
-  async getPurchaseReport(startDate?: string, endDate?: string, supplierId?: string) {
+  async getPurchaseReport(
+    startDate?: string,
+    endDate?: string,
+    supplierId?: string,
+  ) {
     const qb = this.productRepository
       .createQueryBuilder('product')
       .leftJoin('product.supplier', 'supplier')
@@ -101,7 +150,10 @@ export class ReportsService {
       .orderBy('product.createdAt', 'DESC');
 
     if (startDate && endDate) {
-      qb.where('product.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate });
+      qb.where('product.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
     }
     if (supplierId) {
       qb.andWhere('product.supplierId = :supplierId', { supplierId });
@@ -109,23 +161,37 @@ export class ReportsService {
 
     const rows = await qb.getRawMany();
 
-    const summary = await this.productRepository
+    const summary = (await this.productRepository
       .createQueryBuilder('product')
       .select('COUNT(*)', 'totalProducts')
-      .addSelect('SUM(product.purchasePrice * product.stockQty)', 'totalPurchaseValue')
-      .where(startDate && endDate ? 'product.createdAt BETWEEN :startDate AND :endDate' : '1=1', { startDate, endDate })
-      .getRawOne() as Record<string, string | null> | null;
+      .addSelect(
+        'SUM(product.purchasePrice * product.stockQty)',
+        'totalPurchaseValue',
+      )
+      .where(
+        startDate && endDate
+          ? 'product.createdAt BETWEEN :startDate AND :endDate'
+          : '1=1',
+        { startDate, endDate },
+      )
+      .getRawOne()) as Record<string, string | null> | null;
 
     return {
       data: rows,
       summary: {
         totalProducts: parseInt(String(summary?.totalProducts || '0')),
-        totalPurchaseValue: parseFloat(String(summary?.totalPurchaseValue || '0')),
+        totalPurchaseValue: parseFloat(
+          String(summary?.totalPurchaseValue || '0'),
+        ),
       },
     };
   }
 
-  async getExpenseReport(startDate?: string, endDate?: string, categoryId?: string) {
+  async getExpenseReport(
+    startDate?: string,
+    endDate?: string,
+    categoryId?: string,
+  ) {
     const qb = this.expenseRepository
       .createQueryBuilder('expense')
       .leftJoin('expense.category', 'category')
@@ -139,7 +205,10 @@ export class ReportsService {
       .orderBy('expense.expenseDate', 'DESC');
 
     if (startDate && endDate) {
-      qb.where('expense.expenseDate BETWEEN :startDate AND :endDate', { startDate, endDate });
+      qb.where('expense.expenseDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
     }
     if (categoryId) {
       qb.andWhere('expense.categoryId = :categoryId', { categoryId });
@@ -147,12 +216,17 @@ export class ReportsService {
 
     const rows = await qb.getRawMany();
 
-    const summary = await this.expenseRepository
+    const summary = (await this.expenseRepository
       .createQueryBuilder('expense')
       .select('SUM(expense.amount)', 'totalAmount')
       .addSelect('COUNT(*)', 'totalCount')
-      .where(startDate && endDate ? 'expense.expenseDate BETWEEN :startDate AND :endDate' : '1=1', { startDate, endDate })
-      .getRawOne() as Record<string, string | null> | null;
+      .where(
+        startDate && endDate
+          ? 'expense.expenseDate BETWEEN :startDate AND :endDate'
+          : '1=1',
+        { startDate, endDate },
+      )
+      .getRawOne()) as Record<string, string | null> | null;
 
     const byCategory = await this.expenseRepository
       .createQueryBuilder('expense')
@@ -160,7 +234,12 @@ export class ReportsService {
       .select('category.name', 'category')
       .addSelect('SUM(expense.amount)', 'total')
       .addSelect('COUNT(*)', 'count')
-      .where(startDate && endDate ? 'expense.expenseDate BETWEEN :startDate AND :endDate' : '1=1', { startDate, endDate })
+      .where(
+        startDate && endDate
+          ? 'expense.expenseDate BETWEEN :startDate AND :endDate'
+          : '1=1',
+        { startDate, endDate },
+      )
       .groupBy('category.id')
       .getRawMany();
 
@@ -175,7 +254,7 @@ export class ReportsService {
   }
 
   async getPaymentReport(startDate?: string, endDate?: string) {
-    const salePayments = await this.paymentRepository
+    const salePayments: PaymentRow[] = await this.paymentRepository
       .createQueryBuilder('payment')
       .leftJoin('payment.sale', 'sale')
       .leftJoin('sale.customer', 'customer')
@@ -186,10 +265,15 @@ export class ReportsService {
       .addSelect('sale.invoiceNo', 'referenceNo')
       .addSelect('customer.name', 'customerName')
       .addSelect("'sale'", 'type')
-      .where(startDate && endDate ? 'payment.paymentDate BETWEEN :startDate AND :endDate' : '1=1', { startDate, endDate })
+      .where(
+        startDate && endDate
+          ? 'payment.paymentDate BETWEEN :startDate AND :endDate'
+          : '1=1',
+        { startDate, endDate },
+      )
       .getRawMany();
 
-    const dueCollections = await this.dueCollectionRepository
+    const dueCollections: PaymentRow[] = await this.dueCollectionRepository
       .createQueryBuilder('dc')
       .leftJoin('dc.customer', 'customer')
       .select('dc.id', 'id')
@@ -199,14 +283,22 @@ export class ReportsService {
       .addSelect("'DUE-COLLECTION'", 'referenceNo')
       .addSelect('customer.name', 'customerName')
       .addSelect("'due_collection'", 'type')
-      .where(startDate && endDate ? 'dc.receiveDate BETWEEN :startDate AND :endDate' : '1=1', { startDate, endDate })
+      .where(
+        startDate && endDate
+          ? 'dc.receiveDate BETWEEN :startDate AND :endDate'
+          : '1=1',
+        { startDate, endDate },
+      )
       .getRawMany();
 
     const allPayments = [...salePayments, ...dueCollections].sort(
-      (a, b) => new Date(b.date as string).getTime() - new Date(a.date as string).getTime(),
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
 
-    const totalAmount = allPayments.reduce((sum, p) => sum + parseFloat(String(p.amount || '0')), 0);
+    const totalAmount = allPayments.reduce(
+      (sum, p) => sum + parseFloat(String(p.amount || '0')),
+      0,
+    );
 
     const byMethod = allPayments.reduce<Record<string, number>>((acc, p) => {
       const method = String(p.paymentMethod || 'unknown');
@@ -224,7 +316,11 @@ export class ReportsService {
     };
   }
 
-  async getProfitLossReport(startDate?: string, endDate?: string, branchId?: string) {
+  async getProfitLossReport(
+    startDate?: string,
+    endDate?: string,
+    branchId?: string,
+  ) {
     const salesQb = this.saleRepository
       .createQueryBuilder('sale')
       .leftJoin('sale.items', 'item')
@@ -235,23 +331,35 @@ export class ReportsService {
       .addSelect('SUM(product.purchasePrice * item.quantity)', 'totalCOGS');
 
     if (startDate && endDate) {
-      salesQb.where('sale.saleDate BETWEEN :startDate AND :endDate', { startDate, endDate });
+      salesQb.where('sale.saleDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
     }
     if (branchId) {
       salesQb.andWhere('sale.branchId = :branchId', { branchId });
     }
 
-    const salesData = await salesQb.getRawOne() as Record<string, string | null> | null;
+    const salesData = (await salesQb.getRawOne()) as Record<
+      string,
+      string | null
+    > | null;
 
     const expenseQb = this.expenseRepository
       .createQueryBuilder('expense')
       .select('SUM(expense.amount)', 'totalExpense');
 
     if (startDate && endDate) {
-      expenseQb.where('expense.expenseDate BETWEEN :startDate AND :endDate', { startDate, endDate });
+      expenseQb.where('expense.expenseDate BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
     }
 
-    const expenseData = await expenseQb.getRawOne() as Record<string, string | null> | null;
+    const expenseData = (await expenseQb.getRawOne()) as Record<
+      string,
+      string | null
+    > | null;
 
     const serviceQb = this.serviceJobRepository
       .createQueryBuilder('job')
@@ -259,10 +367,16 @@ export class ReportsService {
       .addSelect('SUM(job.dueAmount)', 'serviceDue');
 
     if (startDate && endDate) {
-      serviceQb.where('job.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate });
+      serviceQb.where('job.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
     }
 
-    const serviceData = await serviceQb.getRawOne() as Record<string, string | null> | null;
+    const serviceData = (await serviceQb.getRawOne()) as Record<
+      string,
+      string | null
+    > | null;
 
     const totalRevenue = parseFloat(String(salesData?.totalRevenue || '0'));
     const totalCOGS = parseFloat(String(salesData?.totalCOGS || '0'));
@@ -310,12 +424,17 @@ export class ReportsService {
       .orderBy('SUM(sale.dueAmount)', 'DESC');
 
     if (search) {
-      qb.where('(customer.name LIKE :search OR customer.phone LIKE :search)', { search: `%${search}%` });
+      qb.where('(customer.name LIKE :search OR customer.phone LIKE :search)', {
+        search: `%${search}%`,
+      });
     }
 
-    const rows = await qb.getRawMany();
+    const rows: CustomerDueRow[] = await qb.getRawMany();
 
-    const totalDue = rows.reduce((sum, r) => sum + parseFloat(String(r.totalDue || '0')), 0);
+    const totalDue = rows.reduce(
+      (sum, r) => sum + parseFloat(String(r.totalDue || '0')),
+      0,
+    );
 
     return {
       data: rows,
@@ -331,19 +450,21 @@ export class ReportsService {
 
     const suppliersWithDue = await Promise.all(
       suppliers.map(async (supplier) => {
-        const purchaseResult = await this.productRepository
+        const purchaseResult = (await this.productRepository
           .createQueryBuilder('product')
           .select('SUM(product.purchasePrice)', 'totalPurchase')
           .where('product.supplierId = :id', { id: supplier.id })
-          .getRawOne() as Record<string, string | null> | null;
+          .getRawOne()) as Record<string, string | null> | null;
 
-        const paymentResult = await this.supplierPaymentRepository
+        const paymentResult = (await this.supplierPaymentRepository
           .createQueryBuilder('payment')
           .select('SUM(payment.amount)', 'totalPaid')
           .where('payment.supplierId = :id', { id: supplier.id })
-          .getRawOne() as Record<string, string | null> | null;
+          .getRawOne()) as Record<string, string | null> | null;
 
-        const totalPurchase = parseFloat(String(purchaseResult?.totalPurchase || '0'));
+        const totalPurchase = parseFloat(
+          String(purchaseResult?.totalPurchase || '0'),
+        );
         const totalPaid = parseFloat(String(paymentResult?.totalPaid || '0'));
         const totalDue = totalPurchase - totalPaid;
 
@@ -400,19 +521,27 @@ export class ReportsService {
       .orderBy('job.createdAt', 'DESC');
 
     if (startDate && endDate) {
-      qb.where('job.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate });
+      qb.where('job.createdAt BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
     }
 
     const rows = await qb.getRawMany();
 
-    const summary = await this.serviceJobRepository
+    const summary = (await this.serviceJobRepository
       .createQueryBuilder('job')
       .select('SUM(job.totalAmount)', 'totalAmount')
       .addSelect('SUM(job.paidAmount)', 'totalPaid')
       .addSelect('SUM(job.dueAmount)', 'totalDue')
       .addSelect('COUNT(*)', 'totalJobs')
-      .where(startDate && endDate ? 'job.createdAt BETWEEN :startDate AND :endDate' : '1=1', { startDate, endDate })
-      .getRawOne() as Record<string, string | null> | null;
+      .where(
+        startDate && endDate
+          ? 'job.createdAt BETWEEN :startDate AND :endDate'
+          : '1=1',
+        { startDate, endDate },
+      )
+      .getRawOne()) as Record<string, string | null> | null;
 
     return {
       data: rows,
@@ -449,13 +578,19 @@ export class ReportsService {
 
     const rows = await qb.getRawMany();
 
-    const summary = await this.productRepository
+    const summary = (await this.productRepository
       .createQueryBuilder('product')
       .select('SUM(product.stockQty)', 'totalQty')
-      .addSelect('SUM(product.purchasePrice * product.stockQty)', 'totalPurchaseValue')
-      .addSelect('SUM(product.sellingPrice * product.stockQty)', 'totalSellingValue')
+      .addSelect(
+        'SUM(product.purchasePrice * product.stockQty)',
+        'totalPurchaseValue',
+      )
+      .addSelect(
+        'SUM(product.sellingPrice * product.stockQty)',
+        'totalSellingValue',
+      )
       .addSelect('COUNT(*)', 'totalProducts')
-      .getRawOne() as Record<string, string | null> | null;
+      .getRawOne()) as Record<string, string | null> | null;
 
     const lowStockCount = await this.productRepository
       .createQueryBuilder('product')
@@ -468,8 +603,12 @@ export class ReportsService {
       summary: {
         totalProducts: parseInt(String(summary?.totalProducts || '0')),
         totalQty: parseInt(String(summary?.totalQty || '0')),
-        totalPurchaseValue: parseFloat(String(summary?.totalPurchaseValue || '0')),
-        totalSellingValue: parseFloat(String(summary?.totalSellingValue || '0')),
+        totalPurchaseValue: parseFloat(
+          String(summary?.totalPurchaseValue || '0'),
+        ),
+        totalSellingValue: parseFloat(
+          String(summary?.totalSellingValue || '0'),
+        ),
         lowStockCount,
       },
     };
@@ -480,7 +619,7 @@ export class ReportsService {
     const startOfDay = `${targetDate} 00:00:00`;
     const endOfDay = `${targetDate} 23:59:59`;
 
-    const sales = await this.saleRepository
+    const sales: DayBookRow[] = await this.saleRepository
       .createQueryBuilder('sale')
       .leftJoin('sale.customer', 'customer')
       .select('sale.id', 'id')
@@ -490,10 +629,13 @@ export class ReportsService {
       .addSelect('sale.grandTotal', 'income')
       .addSelect("'0'", 'expense')
       .addSelect("'sale'", 'type')
-      .where('sale.saleDate BETWEEN :start AND :end', { start: startOfDay, end: endOfDay })
+      .where('sale.saleDate BETWEEN :start AND :end', {
+        start: startOfDay,
+        end: endOfDay,
+      })
       .getRawMany();
 
-    const expenses = await this.expenseRepository
+    const expenses: DayBookRow[] = await this.expenseRepository
       .createQueryBuilder('expense')
       .leftJoin('expense.category', 'category')
       .select('expense.id', 'id')
@@ -503,15 +645,24 @@ export class ReportsService {
       .addSelect("'0'", 'income')
       .addSelect('expense.amount', 'expense')
       .addSelect("'expense'", 'type')
-      .where('expense.expenseDate BETWEEN :start AND :end', { start: startOfDay, end: endOfDay })
+      .where('expense.expenseDate BETWEEN :start AND :end', {
+        start: startOfDay,
+        end: endOfDay,
+      })
       .getRawMany();
 
     const allEntries = [...sales, ...expenses].sort(
-      (a, b) => new Date(String(a.date)).getTime() - new Date(String(b.date)).getTime(),
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
 
-    const totalIncome = sales.reduce((sum, s) => sum + parseFloat(String(s.income || '0')), 0);
-    const totalExpense = expenses.reduce((sum, e) => sum + parseFloat(String(e.expense || '0')), 0);
+    const totalIncome = sales.reduce(
+      (sum, s) => sum + parseFloat(String(s.income || '0')),
+      0,
+    );
+    const totalExpense = expenses.reduce(
+      (sum, e) => sum + parseFloat(String(e.expense || '0')),
+      0,
+    );
 
     return {
       date: targetDate,
@@ -525,42 +676,44 @@ export class ReportsService {
   }
 
   async getBalanceSheet() {
-    const totalSalesRevenue = await this.saleRepository
+    const totalSalesRevenue = (await this.saleRepository
       .createQueryBuilder('sale')
       .select('SUM(sale.grandTotal)', 'total')
-      .getRawOne() as Record<string, string | null> | null;
+      .getRawOne()) as Record<string, string | null> | null;
 
-    const totalSalesDue = await this.saleRepository
+    const totalSalesDue = (await this.saleRepository
       .createQueryBuilder('sale')
       .select('SUM(sale.dueAmount)', 'total')
-      .getRawOne() as Record<string, string | null> | null;
+      .getRawOne()) as Record<string, string | null> | null;
 
-    const totalStockValue = await this.productRepository
+    const totalStockValue = (await this.productRepository
       .createQueryBuilder('product')
       .select('SUM(product.purchasePrice * product.stockQty)', 'total')
-      .getRawOne() as Record<string, string | null> | null;
+      .getRawOne()) as Record<string, string | null> | null;
 
-    const totalExpenses = await this.expenseRepository
+    const totalExpenses = (await this.expenseRepository
       .createQueryBuilder('expense')
       .select('SUM(expense.amount)', 'total')
-      .getRawOne() as Record<string, string | null> | null;
+      .getRawOne()) as Record<string, string | null> | null;
 
-    const totalSupplierDue = await this.supplierPaymentRepository
+    const totalSupplierDue = (await this.supplierPaymentRepository
       .createQueryBuilder('payment')
       .select('SUM(payment.amount)', 'paid')
-      .getRawOne() as Record<string, string | null> | null;
+      .getRawOne()) as Record<string, string | null> | null;
 
-    const totalPurchased = await this.productRepository
+    const totalPurchased = (await this.productRepository
       .createQueryBuilder('product')
       .select('SUM(product.purchasePrice)', 'total')
-      .getRawOne() as Record<string, string | null> | null;
+      .getRawOne()) as Record<string, string | null> | null;
 
     const supplierDue =
       parseFloat(String(totalPurchased?.total || '0')) -
       parseFloat(String(totalSupplierDue?.paid || '0'));
 
     const assets = {
-      cash: parseFloat(String(totalSalesRevenue?.total || '0')) - parseFloat(String(totalSalesDue?.total || '0')),
+      cash:
+        parseFloat(String(totalSalesRevenue?.total || '0')) -
+        parseFloat(String(totalSalesDue?.total || '0')),
       customerDue: parseFloat(String(totalSalesDue?.total || '0')),
       stockValue: parseFloat(String(totalStockValue?.total || '0')),
     };
@@ -571,7 +724,10 @@ export class ReportsService {
     };
 
     const totalAssets = Object.values(assets).reduce((a, b) => a + b, 0);
-    const totalLiabilities = Object.values(liabilities).reduce((a, b) => a + b, 0);
+    const totalLiabilities = Object.values(liabilities).reduce(
+      (a, b) => a + b,
+      0,
+    );
 
     return {
       assets,

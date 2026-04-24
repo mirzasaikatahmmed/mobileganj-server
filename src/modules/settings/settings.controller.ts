@@ -1,4 +1,13 @@
-import { Controller, Get, Put, Patch, Param, Body, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Patch,
+  Param,
+  Body,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -28,7 +37,10 @@ export class SettingsController {
 
   @Get(':key')
   @ApiOperation({ summary: 'Get settings section by key' })
-  @ApiParam({ name: 'key', description: 'Settings section key (e.g. store, invoice, emi)' })
+  @ApiParam({
+    name: 'key',
+    description: 'Settings section key (e.g. store, invoice, emi)',
+  })
   @ApiResponse({ status: 200, description: 'Returns settings section' })
   getSection(@Param('key') key: string) {
     return this.settingsService.getSection(key);
@@ -61,7 +73,10 @@ export class SettingsController {
       description: 'Settings values for the section',
     },
   })
-  @ApiResponse({ status: 200, description: 'Settings section updated successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Settings section updated successfully',
+  })
   @ApiUnauthorizedResponse({ description: 'Unauthorized - Admin only' })
   updateSection(
     @Param('key') key: string,

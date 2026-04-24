@@ -81,7 +81,10 @@ Use the \`/api/auth/login\` endpoint to get a token.
     .addTag('Investments', 'Investor and payout management')
     .addTag('Mobile Servicing', 'Service job management')
     .addTag('Overseas Phone Tracking (Admin Only)', 'Carrier tracking system')
-    .addTag('Reports', 'Sales, expense, purchase, profit/loss and accounting reports')
+    .addTag(
+      'Reports',
+      'Sales, expense, purchase, profit/loss and accounting reports',
+    )
     .addTag('Pre-Orders (Admin)', 'Admin management of pre-orders')
     .addTag('Settings', 'Application settings management')
     .addTag('Stock Transfer', 'Stock transfer between branches (Godown)')

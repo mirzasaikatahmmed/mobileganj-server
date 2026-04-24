@@ -1,4 +1,12 @@
-import { Controller, Get, Patch, Param, Query, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  Query,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -30,7 +38,10 @@ export class PreOrdersController {
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
-  @ApiResponse({ status: 200, description: 'Returns paginated list of pre-orders' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated list of pre-orders',
+  })
   findAll(
     @Query() paginationDto: PaginationDto,
     @Query('status') status?: OrderStatus,

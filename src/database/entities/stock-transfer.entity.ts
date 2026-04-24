@@ -41,6 +41,8 @@ export class StockTransfer extends BaseEntity {
   @JoinColumn({ name: 'created_by_id' })
   createdBy: User;
 
-  @OneToMany(() => StockTransferItem, (item) => item.transfer, { cascade: true })
+  @OneToMany(() => StockTransferItem, (item) => item.transfer, {
+    cascade: true,
+  })
   items: StockTransferItem[];
 }
