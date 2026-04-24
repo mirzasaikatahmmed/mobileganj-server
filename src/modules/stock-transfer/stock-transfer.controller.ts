@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -44,7 +53,10 @@ export class StockTransferController {
       required: ['items'],
     },
   })
-  @ApiResponse({ status: 201, description: 'Stock transfer created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'Stock transfer created successfully',
+  })
   create(
     @Body()
     body: {
@@ -65,7 +77,10 @@ export class StockTransferController {
   @ApiQuery({ name: 'status', required: false, enum: StockTransferStatus })
   @ApiQuery({ name: 'fromBranchId', required: false, type: String })
   @ApiQuery({ name: 'toBranchId', required: false, type: String })
-  @ApiResponse({ status: 200, description: 'Returns paginated list of stock transfers' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated list of stock transfers',
+  })
   findAll(
     @Query() paginationDto: PaginationDto,
     @Query('status') status?: StockTransferStatus,
@@ -92,7 +107,9 @@ export class StockTransferController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Patch(':id/approve')
-  @ApiOperation({ summary: 'Approve stock transfer and move stock (Admin only)' })
+  @ApiOperation({
+    summary: 'Approve stock transfer and move stock (Admin only)',
+  })
   @ApiParam({ name: 'id', description: 'Transfer ID' })
   @ApiResponse({ status: 200, description: 'Transfer approved, stock moved' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized - Admin only' })

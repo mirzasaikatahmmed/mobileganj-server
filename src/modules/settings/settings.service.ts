@@ -104,7 +104,9 @@ export class SettingsService {
 
   async getAll(): Promise<Record<string, Record<string, unknown>>> {
     const records = await this.settingsRepository.find();
-    const result: Record<string, Record<string, unknown>> = { ...DEFAULT_SETTINGS };
+    const result: Record<string, Record<string, unknown>> = {
+      ...DEFAULT_SETTINGS,
+    };
 
     for (const record of records) {
       result[record.key] = record.value;
@@ -134,7 +136,10 @@ export class SettingsService {
     const existing = await this.settingsRepository.findOne({ where: { key } });
 
     if (existing) {
-      existing.value = { ...(existing.value as Record<string, unknown>), ...value };
+      existing.value = {
+        ...existing.value,
+        ...value,
+      };
       return this.settingsRepository.save(existing);
     }
 

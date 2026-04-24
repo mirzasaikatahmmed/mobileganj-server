@@ -39,7 +39,11 @@ export class ReportsController {
     @Query('endDate') endDate?: string,
     @Query('supplierId') supplierId?: string,
   ) {
-    return this.reportsService.getPurchaseReport(startDate, endDate, supplierId);
+    return this.reportsService.getPurchaseReport(
+      startDate,
+      endDate,
+      supplierId,
+    );
   }
 
   @Get('expense')
@@ -57,7 +61,9 @@ export class ReportsController {
   }
 
   @Get('payment')
-  @ApiOperation({ summary: 'Payment collections report (sales + due collections)' })
+  @ApiOperation({
+    summary: 'Payment collections report (sales + due collections)',
+  })
   @ApiQuery({ name: 'startDate', required: false, type: String })
   @ApiQuery({ name: 'endDate', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Returns payment report data' })
@@ -79,7 +85,11 @@ export class ReportsController {
     @Query('endDate') endDate?: string,
     @Query('branchId') branchId?: string,
   ) {
-    return this.reportsService.getProfitLossReport(startDate, endDate, branchId);
+    return this.reportsService.getProfitLossReport(
+      startDate,
+      endDate,
+      branchId,
+    );
   }
 
   @Get('customer-due')
@@ -112,7 +122,12 @@ export class ReportsController {
 
   @Get('stock')
   @ApiOperation({ summary: 'Stock/inventory report' })
-  @ApiQuery({ name: 'status', required: false, type: String, description: 'Filter by product status' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: String,
+    description: 'Filter by product status',
+  })
   @ApiResponse({ status: 200, description: 'Returns stock report data' })
   getStockReport(@Query('status') status?: string) {
     return this.reportsService.getStockReport(status);
@@ -120,8 +135,16 @@ export class ReportsController {
 
   @Get('day-book')
   @ApiOperation({ summary: 'Day book (daily transaction log)' })
-  @ApiQuery({ name: 'date', required: false, type: String, description: 'Date (YYYY-MM-DD), defaults to today' })
-  @ApiResponse({ status: 200, description: 'Returns day book entries for the date' })
+  @ApiQuery({
+    name: 'date',
+    required: false,
+    type: String,
+    description: 'Date (YYYY-MM-DD), defaults to today',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns day book entries for the date',
+  })
   getDayBook(@Query('date') date?: string) {
     return this.reportsService.getDayBook(date);
   }
