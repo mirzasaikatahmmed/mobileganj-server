@@ -109,6 +109,7 @@ export class SaleReturnsService {
 
     try {
       const sale = await queryRunner.manager.findOne(Sale, {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         where: { id: createDto.saleId } as any,
         relations: ['items', 'customer'],
       });
@@ -158,6 +159,7 @@ export class SaleReturnsService {
         });
 
         const product = await queryRunner.manager.findOne(Product, {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           where: { id: itemDto.productId } as any,
         });
         if (product) {
@@ -199,6 +201,7 @@ export class SaleReturnsService {
     }
 
     if (updateDto.refundMethod) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       saleReturn.refundMethod = updateDto.refundMethod as any;
     }
 
@@ -228,6 +231,7 @@ export class SaleReturnsService {
     try {
       for (const item of saleReturn.items) {
         const product = await queryRunner.manager.findOne(Product, {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           where: { id: item.productId } as any,
         });
         if (product) {
