@@ -16,11 +16,14 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { ProductSettingsService } from './product-settings.service';
-import { CreateProductSettingDto, UpdateProductSettingDto } from './dto';
+import {
+  CreateProductSettingDto,
+  UpdateProductSettingDto,
+  ProductSettingType,
+} from './dto';
 import { Roles } from '../../common/decorators';
 import { RolesGuard } from '../../common/guards';
 import { UserRole } from '../../common/constants';
-import { ProductSettingType } from '../../database/entities/product-setting.entity';
 
 @ApiTags('Product Settings')
 @ApiBearerAuth()
@@ -41,15 +44,15 @@ export class ProductSettingsController {
   @ApiOperation({ summary: 'Get product settings by type' })
   @ApiParam({
     name: 'type',
-    enum: ProductSettingType,
+    enum: ['phone_type', 'accessory_type', 'condition', 'region', 'unit'],
     description: 'Product setting type',
   })
   @ApiResponse({
     status: 200,
     description: 'Returns settings of specified type',
   })
-  findByType(@Param('type') type: ProductSettingType) {
-    return this.productSettingsService.findByType(type);
+  findByType(@Param('type') type: string) {
+    return this.productSettingsService.findByType(type as ProductSettingType);
   }
 
   @Get(':id')

@@ -5,11 +5,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ProductSetting } from '../../database/entities/product-setting.entity';
 import {
-  ProductSetting,
+  CreateProductSettingDto,
+  UpdateProductSettingDto,
   ProductSettingType,
-} from '../../database/entities/product-setting.entity';
-import { CreateProductSettingDto, UpdateProductSettingDto } from './dto';
+} from './dto';
 
 @Injectable()
 export class ProductSettingsService {
@@ -24,18 +25,26 @@ export class ProductSettingsService {
       order: { createdAt: 'ASC' },
     });
 
+    const phoneTypes: ProductSetting[] = [];
+    const accessoryTypes: ProductSetting[] = [];
+    const conditions: ProductSetting[] = [];
+    const regions: ProductSetting[] = [];
+    const units: ProductSetting[] = [];
+
+    for (const s of settings) {
+      if (s.type === 'phone_type') phoneTypes.push(s);
+      else if (s.type === 'accessory_type') accessoryTypes.push(s);
+      else if (s.type === 'condition') conditions.push(s);
+      else if (s.type === 'region') regions.push(s);
+      else if (s.type === 'unit') units.push(s);
+    }
+
     return {
-      phoneTypes: settings.filter(
-        (s) => s.type === ProductSettingType.PHONE_TYPE,
-      ),
-      accessoryTypes: settings.filter(
-        (s) => s.type === ProductSettingType.ACCESSORY_TYPE,
-      ),
-      conditions: settings.filter(
-        (s) => s.type === ProductSettingType.CONDITION,
-      ),
-      regions: settings.filter((s) => s.type === ProductSettingType.REGION),
-      units: settings.filter((s) => s.type === ProductSettingType.UNIT),
+      phoneTypes,
+      accessoryTypes,
+      conditions,
+      regions,
+      units,
     };
   }
 
@@ -67,7 +76,11 @@ export class ProductSettingsService {
       throw new ConflictException('Value already exists');
     }
 
-    const setting = this.productSettingRepository.create(createDto);
+    const setting = this.productSettingRepository.create({
+      type: createDto.type,
+      name: createDto.name,
+      value: createDto.value,
+    });
     return this.productSettingRepository.save(setting);
   }
 
