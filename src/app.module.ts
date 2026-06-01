@@ -25,6 +25,7 @@ import { PublicModule } from './modules/public/public.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { PreOrdersModule } from './modules/pre-orders/pre-orders.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { ProductSettingsModule } from './modules/product-settings/product-settings.module';
 import { StockTransferModule } from './modules/stock-transfer/stock-transfer.module';
 import { SeedModule } from './database/seeds';
 
@@ -68,6 +69,7 @@ import { SeedModule } from './database/seeds';
     ReportsModule,
     PreOrdersModule,
     SettingsModule,
+    ProductSettingsModule,
     StockTransferModule,
     SeedModule,
   ],

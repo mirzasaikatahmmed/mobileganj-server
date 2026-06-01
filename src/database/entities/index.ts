@@ -27,5 +27,6 @@ export * from './overseas-phone-status-history.entity';
 export * from './pre-order.entity';
 export * from './refresh-token.entity';
 export * from './settings.entity';
+export * from './product-setting.entity';
 export * from './stock-transfer.entity';
 export * from './stock-transfer-item.entity';
