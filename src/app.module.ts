@@ -12,6 +12,7 @@ import * as entities from './database/entities';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { BranchesModule } from './modules/branches/branches.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { CustomersModule } from './modules/customers/customers.module';
@@ -56,6 +57,7 @@ import { SeedModule } from './database/seeds';
     AuthModule,
     UsersModule,
     BranchesModule,
+    CategoriesModule,
     ProductsModule,
     SalesModule,
     CustomersModule,

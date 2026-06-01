@@ -6,6 +6,7 @@ export * from './supplier.entity';
 export * from './supplier-payment.entity';
 export * from './local-seller.entity';
 export * from './brand.entity';
+export * from './category.entity';
 export * from './product.entity';
 export * from './product-variant.entity';
 export * from './product-damage.entity';
