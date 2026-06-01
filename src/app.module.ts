@@ -28,6 +28,8 @@ import { PreOrdersModule } from './modules/pre-orders/pre-orders.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ProductSettingsModule } from './modules/product-settings/product-settings.module';
 import { StockTransferModule } from './modules/stock-transfer/stock-transfer.module';
+import { InvoiceSettingsModule } from './modules/invoice-settings/invoice-settings.module';
+import { SaleReturnsModule } from './modules/sale-returns/sale-returns.module';
 import { SeedModule } from './database/seeds';
 
 @Module({
@@ -73,6 +75,8 @@ import { SeedModule } from './database/seeds';
     SettingsModule,
     ProductSettingsModule,
     StockTransferModule,
+    InvoiceSettingsModule,
+    SaleReturnsModule,
     SeedModule,
   ],
   controllers: [AppController],
