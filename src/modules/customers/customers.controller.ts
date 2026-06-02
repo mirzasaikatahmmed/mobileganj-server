@@ -17,8 +17,12 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { CustomersService } from './customers.service';
-import { CreateCustomerDto, DueCollectionDto } from './dto';
-import { PaginationDto } from '../../common/dto';
+import {
+  CreateCustomerDto,
+  DueCollectionDto,
+  UpdateCustomerDto,
+  FilterCustomerDto,
+} from './dto';
 import { CurrentUser } from '../../common/decorators';
 
 @ApiTags('Customers')
@@ -37,40 +41,27 @@ export class CustomersController {
 
   @Get()
   @ApiOperation({ summary: 'Get all customers' })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page',
-  })
-  @ApiQuery({
-    name: 'dueOnly',
-    required: false,
-    type: Boolean,
-    description: 'Filter customers with due only',
-  })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    type: String,
-    description: 'Search by name or phone',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns paginated list of customers',
-  })
-  findAll(
-    @Query() paginationDto: PaginationDto,
-    @Query('dueOnly') dueOnly?: boolean,
-    @Query('search') search?: string,
-  ) {
-    return this.customersService.findAll({ ...paginationDto, dueOnly, search });
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'customerTypeId', required: false, type: String })
+  @ApiQuery({ name: 'groupId', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, enum: ['active', 'inactive'] })
+  @ApiQuery({ name: 'dueOnly', required: false, type: Boolean })
+  findAll(@Query() filters: FilterCustomerDto) {
+    return this.customersService.findAll(filters);
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get customer statistics' })
+  getStats() {
+    return this.customersService.getStats();
+  }
+
+  @Get('due')
+  @ApiOperation({ summary: 'Get customers with due' })
+  getWithDue() {
+    return this.customersService.getWithDue();
   }
 
   @Get('search/phone/:phone')
@@ -97,11 +88,10 @@ export class CustomersController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update customer' })
   @ApiParam({ name: 'id', description: 'Customer ID' })
-  @ApiBody({ type: CreateCustomerDto })
-  @ApiResponse({ status: 200, description: 'Customer updated successfully' })
+  @ApiBody({ type: UpdateCustomerDto })
   update(
     @Param('id') id: string,
-    @Body() updateCustomerDto: Partial<CreateCustomerDto>,
+    @Body() updateCustomerDto: UpdateCustomerDto,
   ) {
     return this.customersService.update(id, updateCustomerDto);
   }

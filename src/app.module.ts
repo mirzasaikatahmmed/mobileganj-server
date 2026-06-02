@@ -30,6 +30,8 @@ import { ProductSettingsModule } from './modules/product-settings/product-settin
 import { StockTransferModule } from './modules/stock-transfer/stock-transfer.module';
 import { InvoiceSettingsModule } from './modules/invoice-settings/invoice-settings.module';
 import { SaleReturnsModule } from './modules/sale-returns/sale-returns.module';
+import { CustomerTypesModule } from './modules/customer-types/customer-types.module';
+import { CustomerGroupsModule } from './modules/customer-groups/customer-groups.module';
 import { SeedModule } from './database/seeds';
 
 @Module({
@@ -77,6 +79,8 @@ import { SeedModule } from './database/seeds';
     StockTransferModule,
     InvoiceSettingsModule,
     SaleReturnsModule,
+    CustomerTypesModule,
+    CustomerGroupsModule,
     SeedModule,
   ],
   controllers: [AppController],

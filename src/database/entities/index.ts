@@ -2,6 +2,8 @@ export * from './base.entity';
 export * from './user.entity';
 export * from './branch.entity';
 export * from './customer.entity';
+export * from './customer-type.entity';
+export * from './customer-group.entity';
 export * from './supplier.entity';
 export * from './supplier-payment.entity';
 export * from './local-seller.entity';

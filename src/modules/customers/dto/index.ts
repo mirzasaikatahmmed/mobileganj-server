@@ -1,2 +1,4 @@
 export * from './create-customer.dto';
+export * from './update-customer.dto';
 export * from './due-collection.dto';
+export * from './filter-customer.dto';
