@@ -57,10 +57,9 @@ export class SuppliersController {
   })
   findAll(
     @Query() paginationDto: PaginationDto,
-    @Query('search') search?: string,
     @Query('dueOnly') dueOnly?: boolean,
   ) {
-    return this.suppliersService.findAll({ ...paginationDto, search, dueOnly });
+    return this.suppliersService.findAll({ ...paginationDto, dueOnly });
   }
 
   @Get('stats')
@@ -79,14 +78,8 @@ export class SuppliersController {
     status: 200,
     description: 'Returns paginated list of local sellers',
   })
-  findAllLocalSellers(
-    @Query() paginationDto: PaginationDto,
-    @Query('search') search?: string,
-  ) {
-    return this.suppliersService.findAllLocalSellers({
-      ...paginationDto,
-      search,
-    });
+  findAllLocalSellers(@Query() paginationDto: PaginationDto) {
+    return this.suppliersService.findAllLocalSellers(paginationDto);
   }
 
   @Post('local-sellers')
