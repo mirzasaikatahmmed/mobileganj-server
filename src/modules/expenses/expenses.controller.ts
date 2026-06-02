@@ -22,6 +22,7 @@ import {
 import { ExpensesService } from './expenses.service';
 import {
   CreateExpenseCategoryDto,
+  UpdateExpenseCategoryDto,
   CreateExpenseDto,
   UpdateExpenseDto,
 } from './dto';
@@ -69,6 +70,28 @@ export class ExpensesController {
   })
   seedCategories() {
     return this.expensesService.seedDefaultCategories();
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('categories/:id')
+  @ApiOperation({ summary: 'Update expense category (Admin only)' })
+  @ApiBody({ type: UpdateExpenseCategoryDto })
+  @ApiResponse({ status: 200, description: 'Category updated successfully' })
+  updateCategory(
+    @Param('id') id: string,
+    @Body() data: UpdateExpenseCategoryDto,
+  ) {
+    return this.expensesService.updateCategory(id, data);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Delete('categories/:id')
+  @ApiOperation({ summary: 'Delete expense category (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Category deleted successfully' })
+  removeCategory(@Param('id') id: string) {
+    return this.expensesService.removeCategory(id);
   }
 
   @Post()
