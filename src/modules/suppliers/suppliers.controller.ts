@@ -20,7 +20,12 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { SuppliersService } from './suppliers.service';
-import { CreateSupplierDto, UpdateSupplierDto, MakePaymentDto } from './dto';
+import {
+  CreateSupplierDto,
+  UpdateSupplierDto,
+  CreateLocalSellerDto,
+  MakePaymentDto,
+} from './dto';
 import { PaginationDto } from '../../common/dto';
 import { CurrentUser, Roles } from '../../common/decorators';
 import { RolesGuard } from '../../common/guards';
@@ -82,6 +87,17 @@ export class SuppliersController {
       ...paginationDto,
       search,
     });
+  }
+
+  @Post('local-sellers')
+  @ApiOperation({ summary: 'Create new local seller' })
+  @ApiBody({ type: CreateLocalSellerDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Local seller created successfully',
+  })
+  createLocalSeller(@Body() data: CreateLocalSellerDto) {
+    return this.suppliersService.createLocalSeller(data);
   }
 
   @Get('local-sellers/:id')

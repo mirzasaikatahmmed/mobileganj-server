@@ -258,4 +258,20 @@ export class SuppliersService {
 
     return { ...seller, products };
   }
+
+  async createLocalSeller(data: {
+    fullName: string;
+    phone: string;
+    address: string;
+    nidNumber: string;
+    fatherName?: string;
+    motherName?: string;
+    reference?: string;
+    nidFrontPhoto?: string;
+    nidBackPhoto?: string;
+    sellerPhoto?: string;
+  }) {
+    const seller = this.localSellerRepository.create(data);
+    return this.localSellerRepository.save(seller);
+  }
 }
