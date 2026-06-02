@@ -205,6 +205,90 @@ export class SuppliersService {
     };
   }
 
+  async getSupplierLedger(
+    supplierId: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    await this.findOne(supplierId);
+
+    const purchaseQuery = this.productRepository
+      .createQueryBuilder('product')
+      .where('product.supplierId = :supplierId', { supplierId });
+
+    if (startDate) {
+      purchaseQuery.andWhere('product.createdAt >= :startDate', { startDate });
+    }
+    if (endDate) {
+      purchaseQuery.andWhere('product.createdAt <= :endDate', { endDate });
+    }
+
+    const purchases = await purchaseQuery
+      .orderBy('product.createdAt', 'ASC')
+      .getMany();
+
+    const paymentQuery = this.paymentRepository
+      .createQueryBuilder('payment')
+      .where('payment.supplierId = :supplierId', { supplierId });
+
+    if (startDate) {
+      paymentQuery.andWhere('payment.paymentDate >= :startDate', { startDate });
+    }
+    if (endDate) {
+      paymentQuery.andWhere('payment.paymentDate <= :endDate', { endDate });
+    }
+
+    const payments = await paymentQuery
+      .orderBy('payment.paymentDate', 'ASC')
+      .getMany();
+
+    const ledger: Array<{
+      date: Date;
+      description: string;
+      debit: number;
+      credit: number;
+      type: string;
+      balance: number;
+    }> = [];
+    let balance = 0;
+
+    const transactions = [
+      ...purchases.map((p) => ({
+        date: p.createdAt,
+        description: `Purchase - ${p.imei1 || p.title}`,
+        debit: p.purchasePrice,
+        credit: 0,
+        type: 'purchase',
+      })),
+      ...payments.map((p) => ({
+        date: p.paymentDate,
+        description: `Payment - ${p.paymentMethod}`,
+        debit: 0,
+        credit: p.amount,
+        type: 'payment',
+      })),
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    for (const transaction of transactions) {
+      balance += transaction.debit - transaction.credit;
+      ledger.push({
+        ...transaction,
+        balance,
+      });
+    }
+
+    const totals = await this.getSupplierTotals(supplierId);
+
+    return {
+      ledger,
+      summary: {
+        totalDebit: totals.totalPurchase,
+        totalCredit: totals.totalPaid,
+        balance: totals.totalDue,
+      },
+    };
+  }
+
   async getSupplierTotals(supplierId: string) {
     const purchaseResult = (await this.productRepository
       .createQueryBuilder('product')

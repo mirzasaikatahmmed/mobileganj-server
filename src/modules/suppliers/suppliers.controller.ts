@@ -131,6 +131,20 @@ export class SuppliersController {
     return this.suppliersService.findOne(id);
   }
 
+  @Get(':id/ledger')
+  @ApiOperation({ summary: 'Get supplier ledger' })
+  @ApiParam({ name: 'id', description: 'Supplier ID' })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Returns supplier ledger' })
+  getSupplierLedger(
+    @Param('id') id: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.suppliersService.getSupplierLedger(id, startDate, endDate);
+  }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update supplier' })
   @ApiParam({ name: 'id', description: 'Supplier ID' })
