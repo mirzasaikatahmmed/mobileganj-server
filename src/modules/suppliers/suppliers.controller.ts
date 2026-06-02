@@ -69,6 +69,19 @@ export class SuppliersController {
     return this.suppliersService.getStats();
   }
 
+  @Get('payment-dues')
+  @ApiOperation({ summary: 'Get suppliers with payment dues' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns suppliers with due amounts',
+  })
+  getPaymentDues(@Query() paginationDto: PaginationDto) {
+    return this.suppliersService.getPaymentDues(paginationDto);
+  }
+
   @Get('local-sellers')
   @ApiOperation({ summary: 'Get all local sellers (View Only)' })
   @ApiQuery({ name: 'page', required: false, type: Number })

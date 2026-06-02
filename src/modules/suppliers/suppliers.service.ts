@@ -154,6 +154,57 @@ export class SuppliersService {
     };
   }
 
+  async getPaymentDues(paginationDto: PaginationDto & { search?: string }) {
+    const { page = 1, limit = 10, search } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.supplierRepository
+      .createQueryBuilder('supplier')
+      .leftJoinAndSelect('supplier.products', 'product');
+
+    if (search) {
+      queryBuilder.andWhere(
+        '(supplier.name LIKE :search OR supplier.phone LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    const suppliers = await queryBuilder
+      .orderBy('supplier.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getMany();
+
+    const dueList = await Promise.all(
+      suppliers.map(async (supplier) => {
+        const totals = await this.getSupplierTotals(supplier.id);
+        if (totals.totalDue <= 0) return null;
+
+        return {
+          id: supplier.id,
+          supplierName: supplier.name,
+          phone: supplier.phone || 'N/A',
+          totalAmount: totals.totalPurchase,
+          paidAmount: totals.totalPaid,
+          dueAmount: totals.totalDue,
+          totalPurchases: totals.totalPhones,
+        };
+      }),
+    );
+
+    const filtered = dueList.filter((item) => item !== null);
+
+    return {
+      data: filtered,
+      meta: {
+        total: filtered.length,
+        page,
+        limit,
+        totalPages: Math.ceil(filtered.length / limit),
+      },
+    };
+  }
+
   async getSupplierTotals(supplierId: string) {
     const purchaseResult = (await this.productRepository
       .createQueryBuilder('product')
