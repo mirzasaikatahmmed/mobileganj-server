@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Delete,
   Body,
   Param,
   Query,
@@ -18,7 +20,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { SuppliersService } from './suppliers.service';
-import { CreateSupplierDto, MakePaymentDto } from './dto';
+import { CreateSupplierDto, UpdateSupplierDto, MakePaymentDto } from './dto';
 import { PaginationDto } from '../../common/dto';
 import { CurrentUser, Roles } from '../../common/decorators';
 import { RolesGuard } from '../../common/guards';
@@ -54,6 +56,13 @@ export class SuppliersController {
     @Query('dueOnly') dueOnly?: boolean,
   ) {
     return this.suppliersService.findAll({ ...paginationDto, search, dueOnly });
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get supplier statistics' })
+  @ApiResponse({ status: 200, description: 'Returns supplier stats' })
+  getStats() {
+    return this.suppliersService.getStats();
   }
 
   @Get('local-sellers')
@@ -98,6 +107,23 @@ export class SuppliersController {
   @ApiResponse({ status: 404, description: 'Supplier not found' })
   findOne(@Param('id') id: string) {
     return this.suppliersService.findOne(id);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update supplier' })
+  @ApiParam({ name: 'id', description: 'Supplier ID' })
+  @ApiBody({ type: UpdateSupplierDto })
+  @ApiResponse({ status: 200, description: 'Supplier updated successfully' })
+  update(@Param('id') id: string, @Body() data: UpdateSupplierDto) {
+    return this.suppliersService.update(id, data);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete supplier' })
+  @ApiParam({ name: 'id', description: 'Supplier ID' })
+  @ApiResponse({ status: 200, description: 'Supplier deleted successfully' })
+  delete(@Param('id') id: string) {
+    return this.suppliersService.delete(id);
   }
 
   @Post(':id/payment')

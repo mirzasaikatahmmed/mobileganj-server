@@ -86,6 +86,74 @@ export class SuppliersService {
     return { ...supplier, ...totals, products };
   }
 
+  async update(
+    id: string,
+    data: Partial<{
+      name?: string;
+      phone?: string;
+      email?: string;
+      address?: string;
+      city?: string;
+      shopName?: string;
+      bankName?: string;
+      accountNumber?: string;
+      note?: string;
+      isActive?: boolean;
+    }>,
+  ) {
+    const supplier = await this.supplierRepository.findOne({ where: { id } });
+    if (!supplier) throw new NotFoundException('Supplier not found');
+
+    Object.assign(supplier, data);
+    return this.supplierRepository.save(supplier);
+  }
+
+  async delete(id: string) {
+    const supplier = await this.supplierRepository.findOne({ where: { id } });
+    if (!supplier) throw new NotFoundException('Supplier not found');
+
+    await this.supplierRepository.remove(supplier);
+  }
+
+  async getStats() {
+    const total = await this.supplierRepository.count();
+    const active = await this.supplierRepository.count({
+      where: { isActive: true },
+    });
+
+    const purchaseResult = (await this.productRepository
+      .createQueryBuilder('product')
+      .select('COUNT(DISTINCT product.supplierId)', 'withPurchase')
+      .addSelect('SUM(product.purchasePrice)', 'totalPurchase')
+      .where('product.supplierId IS NOT NULL')
+      .getRawOne()) as {
+      withPurchase?: string | null;
+      totalPurchase?: string | null;
+    } | null;
+
+    const paymentResult = (await this.paymentRepository
+      .createQueryBuilder('payment')
+      .select('SUM(payment.amount)', 'totalPaid')
+      .getRawOne()) as {
+      totalPaid?: string | null;
+    } | null;
+
+    const totalPurchase = parseFloat(
+      String(purchaseResult?.totalPurchase || '0'),
+    );
+    const totalPaid = parseFloat(String(paymentResult?.totalPaid || '0'));
+
+    return {
+      total,
+      active,
+      inactive: total - active,
+      withPurchase: parseInt(String(purchaseResult?.withPurchase || '0')),
+      totalPurchase,
+      totalPaid,
+      totalDue: totalPurchase - totalPaid,
+    };
+  }
+
   async getSupplierTotals(supplierId: string) {
     const purchaseResult = (await this.productRepository
       .createQueryBuilder('product')
