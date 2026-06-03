@@ -40,6 +40,11 @@ export class ProductFilterDto extends PaginationDto {
   supplierId?: string;
 
   @ApiPropertyOptional()
+  @IsUUID()
+  @IsOptional()
+  branchId?: string;
+
+  @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   imei?: string;

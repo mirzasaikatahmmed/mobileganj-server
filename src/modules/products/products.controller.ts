@@ -100,6 +100,13 @@ export class ProductsController {
     return this.productsService.getSummary();
   }
 
+  @Get('performance')
+  @ApiOperation({ summary: 'Get product sales performance' })
+  @ApiResponse({ status: 200, description: 'Returns product performance data' })
+  getPerformance() {
+    return this.productsService.getPerformance();
+  }
+
   @Get('search/imei/:imei')
   @ApiOperation({ summary: 'Find product by IMEI' })
   @ApiParam({ name: 'imei', description: 'Product IMEI' })
@@ -186,6 +193,14 @@ export class ProductsController {
   @ApiResponse({ status: 404, description: 'Product not found' })
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(id);
+  }
+
+  @Get(':id/ledger')
+  @ApiOperation({ summary: 'Get product inventory ledger' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({ status: 200, description: 'Returns product ledger data' })
+  getProductLedger(@Param('id') id: string) {
+    return this.productsService.getProductLedger(id);
   }
 
   @Patch(':id')
