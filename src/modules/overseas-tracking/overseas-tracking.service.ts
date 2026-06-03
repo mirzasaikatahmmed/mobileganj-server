@@ -129,6 +129,7 @@ export class OverseasTrackingService {
       sourceType,
       startDate,
       endDate,
+      search,
     } = filterDto;
     const skip = (page - 1) * limit;
 
@@ -148,6 +149,13 @@ export class OverseasTrackingService {
       queryBuilder.andWhere('tracking.sourceType = :sourceType', {
         sourceType,
       });
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        '(tracking.phoneModel LIKE :search OR tracking.brand LIKE :search OR tracking.imei1 LIKE :search OR tracking.imei2 LIKE :search OR tracking.sourcePersonName LIKE :search OR carrier.name LIKE :search)',
+        { search: `%${search}%` },
+      );
     }
 
     if (startDate && endDate) {

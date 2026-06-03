@@ -23,8 +23,8 @@ import {
   CreateCarrierDto,
   CreatePhoneTrackingDto,
   UpdateStatusDto,
+  FilterOverseasTrackingDto,
 } from './dto';
-import { PaginationDto } from '../../common/dto';
 import { CurrentUser, Roles } from '../../common/decorators';
 import { RolesGuard } from '../../common/guards';
 import {
@@ -85,22 +85,8 @@ export class OverseasTrackingController {
     status: 200,
     description: 'Returns paginated list of phone trackings',
   })
-  findAll(
-    @Query() paginationDto: PaginationDto,
-    @Query('status') status?: OverseasPhoneStatus,
-    @Query('carrierId') carrierId?: string,
-    @Query('sourceType') sourceType?: SourceType,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
-    return this.trackingService.findAll({
-      ...paginationDto,
-      status,
-      carrierId,
-      sourceType,
-      startDate,
-      endDate,
-    });
+  findAll(@Query() filterDto: FilterOverseasTrackingDto) {
+    return this.trackingService.findAll(filterDto);
   }
 
   @Get('summary')
