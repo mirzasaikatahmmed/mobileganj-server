@@ -4,11 +4,6 @@ import { PaymentStatus } from '../../../common/constants';
 import { PaginationDto } from '../../../common/dto';
 
 export class SaleFilterDto extends PaginationDto {
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  search?: string;
-
   @ApiPropertyOptional({ enum: PaymentStatus })
   @IsEnum(PaymentStatus)
   @IsOptional()

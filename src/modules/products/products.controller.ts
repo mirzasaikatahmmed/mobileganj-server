@@ -55,6 +55,23 @@ export class ProductsController {
     return this.productsService.findAllBrands();
   }
 
+  @Patch('brands/:id')
+  @ApiOperation({ summary: 'Update brand' })
+  @ApiParam({ name: 'id', description: 'Brand ID' })
+  @ApiBody({ type: CreateBrandDto })
+  @ApiResponse({ status: 200, description: 'Brand updated successfully' })
+  updateBrand(@Param('id') id: string, @Body() updateBrandDto: CreateBrandDto) {
+    return this.productsService.updateBrand(id, updateBrandDto);
+  }
+
+  @Delete('brands/:id')
+  @ApiOperation({ summary: 'Delete brand' })
+  @ApiParam({ name: 'id', description: 'Brand ID' })
+  @ApiResponse({ status: 200, description: 'Brand deleted successfully' })
+  deleteBrand(@Param('id') id: string) {
+    return this.productsService.deleteBrand(id);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create new product (Stock In)' })
   @ApiBody({ type: CreateProductDto })

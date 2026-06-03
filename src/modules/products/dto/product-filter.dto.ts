@@ -9,11 +9,6 @@ import {
 import { PaginationDto } from '../../../common/dto';
 
 export class ProductFilterDto extends PaginationDto {
-  @ApiPropertyOptional()
-  @IsString()
-  @IsOptional()
-  search?: string;
-
   @ApiPropertyOptional({ enum: ProductCategory })
   @IsEnum(ProductCategory)
   @IsOptional()

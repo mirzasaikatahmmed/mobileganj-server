@@ -26,6 +26,23 @@ export class ExpensesService {
     });
   }
 
+  async updateCategory(
+    id: string,
+    data: Partial<{ name: string; type: ExpenseType; isActive: boolean }>,
+  ) {
+    const category = await this.categoryRepository.findOne({ where: { id } });
+    if (!category) throw new NotFoundException('Category not found');
+    Object.assign(category, data);
+    return this.categoryRepository.save(category);
+  }
+
+  async removeCategory(id: string) {
+    const category = await this.categoryRepository.findOne({ where: { id } });
+    if (!category) throw new NotFoundException('Category not found');
+    await this.categoryRepository.softDelete(id);
+    return { message: 'Category deleted successfully' };
+  }
+
   async seedDefaultCategories() {
     const defaultCategories = [
       { name: 'Shop Rent', type: ExpenseType.FIXED, isSystem: true },

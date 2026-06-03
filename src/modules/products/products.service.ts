@@ -57,6 +57,24 @@ export class ProductsService {
     });
   }
 
+  async updateBrand(id: string, updateBrandDto: CreateBrandDto) {
+    const brand = await this.brandRepository.findOne({ where: { id } });
+    if (!brand) {
+      throw new NotFoundException('Brand not found');
+    }
+    Object.assign(brand, updateBrandDto);
+    return this.brandRepository.save(brand);
+  }
+
+  async deleteBrand(id: string) {
+    const brand = await this.brandRepository.findOne({ where: { id } });
+    if (!brand) {
+      throw new NotFoundException('Brand not found');
+    }
+    await this.brandRepository.softDelete(id);
+    return { message: 'Brand deleted successfully' };
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async create(createProductDto: CreateProductDto, _userId: string) {
     const { localSellerInfo, supplierName, supplierPhone, ...productData } =

@@ -12,8 +12,12 @@ import {
   DueCollection,
   Payment,
 } from '../../database/entities';
-import { CreateCustomerDto, DueCollectionDto } from './dto';
-import { PaginationDto } from '../../common/dto';
+import {
+  CreateCustomerDto,
+  DueCollectionDto,
+  UpdateCustomerDto,
+  FilterCustomerDto,
+} from './dto';
 import { PaymentStatus } from '../../common/constants';
 
 @Injectable()
@@ -43,21 +47,48 @@ export class CustomersService {
     return this.customerRepository.save(customer);
   }
 
-  async findAll(
-    paginationDto: PaginationDto & { dueOnly?: boolean; search?: string },
-  ) {
-    const { page = 1, limit = 10, dueOnly, search } = paginationDto;
+  async findAll(filters: FilterCustomerDto) {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      customerTypeId,
+      groupId,
+      status,
+      dueOnly,
+    } = filters;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.customerRepository
       .createQueryBuilder('customer')
-      .leftJoinAndSelect('customer.sales', 'sales');
+      .leftJoinAndSelect('customer.customerType', 'customerType')
+      .leftJoinAndSelect('customer.groups', 'groups');
 
     if (search) {
       queryBuilder.andWhere(
-        '(customer.name LIKE :search OR customer.phone LIKE :search)',
+        '(customer.name LIKE :search OR customer.phone LIKE :search OR customer.email LIKE :search)',
         { search: `%${search}%` },
       );
+    }
+
+    if (customerTypeId) {
+      queryBuilder.andWhere('customer.customerTypeId = :customerTypeId', {
+        customerTypeId,
+      });
+    }
+
+    if (groupId) {
+      queryBuilder.andWhere('groups.id = :groupId', { groupId });
+    }
+
+    if (status === 'active') {
+      queryBuilder.andWhere('customer.isActive = :isActive', {
+        isActive: true,
+      });
+    } else if (status === 'inactive') {
+      queryBuilder.andWhere('customer.isActive = :isActive', {
+        isActive: false,
+      });
     }
 
     const [customers, total] = await queryBuilder
@@ -97,6 +128,7 @@ export class CustomersService {
   async findOne(id: string) {
     const customer = await this.customerRepository.findOne({
       where: { id },
+      relations: ['customerType', 'groups'],
     });
 
     if (!customer) {
@@ -147,7 +179,49 @@ export class CustomersService {
     };
   }
 
-  async update(id: string, updateCustomerDto: Partial<CreateCustomerDto>) {
+  async getStats() {
+    const total = await this.customerRepository.count();
+    const active = await this.customerRepository.count({
+      where: { isActive: true },
+    });
+    const inactive = total - active;
+
+    const dueResult = (await this.saleRepository
+      .createQueryBuilder('sale')
+      .select('COUNT(DISTINCT sale.customerId)', 'count')
+      .addSelect('SUM(sale.dueAmount)', 'total')
+      .where('sale.dueAmount > 0')
+      .getRawOne()) as { count?: string; total?: string } | null;
+
+    return {
+      total,
+      active,
+      inactive,
+      withDue: parseInt(String(dueResult?.count || '0')),
+      totalDueAmount: parseFloat(String(dueResult?.total || '0')),
+    };
+  }
+
+  async getWithDue() {
+    const customers = await this.customerRepository
+      .createQueryBuilder('customer')
+      .leftJoinAndSelect('customer.customerType', 'customerType')
+      .leftJoinAndSelect('customer.sales', 'sales')
+      .where('sales.dueAmount > 0')
+      .getMany();
+
+    return Promise.all(
+      customers.map(async (customer) => {
+        const totals = await this.getCustomerTotals(customer.id);
+        return {
+          ...customer,
+          ...totals,
+        };
+      }),
+    );
+  }
+
+  async update(id: string, updateCustomerDto: UpdateCustomerDto) {
     const customer = await this.findOne(id);
 
     if (updateCustomerDto.phone && updateCustomerDto.phone !== customer.phone) {

@@ -12,6 +12,7 @@ import * as entities from './database/entities';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { BranchesModule } from './modules/branches/branches.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { CustomersModule } from './modules/customers/customers.module';
@@ -25,7 +26,12 @@ import { PublicModule } from './modules/public/public.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { PreOrdersModule } from './modules/pre-orders/pre-orders.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { ProductSettingsModule } from './modules/product-settings/product-settings.module';
 import { StockTransferModule } from './modules/stock-transfer/stock-transfer.module';
+import { InvoiceSettingsModule } from './modules/invoice-settings/invoice-settings.module';
+import { SaleReturnsModule } from './modules/sale-returns/sale-returns.module';
+import { CustomerTypesModule } from './modules/customer-types/customer-types.module';
+import { CustomerGroupsModule } from './modules/customer-groups/customer-groups.module';
 import { SeedModule } from './database/seeds';
 
 @Module({
@@ -55,6 +61,7 @@ import { SeedModule } from './database/seeds';
     AuthModule,
     UsersModule,
     BranchesModule,
+    CategoriesModule,
     ProductsModule,
     SalesModule,
     CustomersModule,
@@ -68,7 +75,12 @@ import { SeedModule } from './database/seeds';
     ReportsModule,
     PreOrdersModule,
     SettingsModule,
+    ProductSettingsModule,
     StockTransferModule,
+    InvoiceSettingsModule,
+    SaleReturnsModule,
+    CustomerTypesModule,
+    CustomerGroupsModule,
     SeedModule,
   ],
   controllers: [AppController],
