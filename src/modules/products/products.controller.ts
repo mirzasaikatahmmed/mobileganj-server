@@ -168,14 +168,14 @@ export class ProductsController {
         'Content-Disposition',
         `inline; filename="barcode-${value}.png"`,
       );
-      return res.send(result as Buffer);
+      return res.send(result);
     } else {
       res.setHeader('Content-Type', 'image/svg+xml');
       res.setHeader(
         'Content-Disposition',
         `inline; filename="barcode-${value}.svg"`,
       );
-      return res.send(result as string);
+      return res.send(result);
     }
   }
 

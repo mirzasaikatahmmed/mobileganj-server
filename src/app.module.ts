@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 
-import { databaseConfig, jwtConfig, appConfig } from './config';
+import { databaseConfig, jwtConfig, appConfig, s3Config } from './config';
 import { JwtAuthGuard } from './common/guards';
 import { AppController } from './app.controller';
 
@@ -33,12 +33,13 @@ import { SaleReturnsModule } from './modules/sale-returns/sale-returns.module';
 import { CustomerTypesModule } from './modules/customer-types/customer-types.module';
 import { CustomerGroupsModule } from './modules/customer-groups/customer-groups.module';
 import { SeedModule } from './database/seeds';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, appConfig],
+      load: [databaseConfig, jwtConfig, appConfig, s3Config],
     }),
 
     TypeOrmModule.forRootAsync({
@@ -82,6 +83,7 @@ import { SeedModule } from './database/seeds';
     CustomerTypesModule,
     CustomerGroupsModule,
     SeedModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [
