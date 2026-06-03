@@ -21,8 +21,8 @@ import {
   CreateServiceJobDto,
   UpdateServiceStatusDto,
   CollectDueDto,
+  FilterServiceJobDto,
 } from './dto';
-import { PaginationDto } from '../../common/dto';
 import { CurrentUser } from '../../common/decorators';
 import { ServiceStatus } from '../../common/constants';
 
@@ -53,22 +53,8 @@ export class ServicingController {
     status: 200,
     description: 'Returns paginated list of service jobs',
   })
-  findAll(
-    @Query() paginationDto: PaginationDto,
-    @Query('status') status?: ServiceStatus,
-    @Query('technicianName') technicianName?: string,
-    @Query('dueOnly') dueOnly?: boolean,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
-    return this.servicingService.findAll({
-      ...paginationDto,
-      status,
-      technicianName,
-      dueOnly,
-      startDate,
-      endDate,
-    });
+  findAll(@Query() filterDto: FilterServiceJobDto) {
+    return this.servicingService.findAll(filterDto);
   }
 
   @Get('jobs/summary')

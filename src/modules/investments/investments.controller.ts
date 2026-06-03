@@ -9,8 +9,7 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { InvestmentsService } from './investments.service';
-import { CreateInvestorDto, CreatePayoutDto } from './dto';
-import { PaginationDto } from '../../common/dto';
+import { CreateInvestorDto, CreatePayoutDto, FilterInvestorDto } from './dto';
 import { CurrentUser } from '../../common/decorators';
 import { InvestorStatus } from '../../common/constants';
 
@@ -38,16 +37,8 @@ export class InvestmentsController {
     status: 200,
     description: 'Returns paginated list of investors',
   })
-  findAll(
-    @Query() paginationDto: PaginationDto,
-    @Query('search') search?: string,
-    @Query('status') status?: InvestorStatus,
-  ) {
-    return this.investmentsService.findAll({
-      ...paginationDto,
-      search,
-      status,
-    });
+  findAll(@Query() filterDto: FilterInvestorDto) {
+    return this.investmentsService.findAll(filterDto);
   }
 
   @Get('investors/:id')
