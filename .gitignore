@@ -3,6 +3,10 @@
 /node_modules
 /build
 
+# lockfiles from other package managers
+pnpm-lock.yaml
+yarn.lock
+
 # Logs
 logs
 *.log

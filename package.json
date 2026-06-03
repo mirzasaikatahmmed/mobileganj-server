@@ -5,7 +5,6 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
-  "packageManager": "pnpm@11.1.2",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -20,8 +19,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "ci:fix": "pnpm format --fix && pnpm lint --fix",
-    "ci:cd": "pnpm lint && pnpm test && pnpm build"
+    "ci:fix": "npm run format --fix && npm run lint --fix",
+    "ci:cd": "npm run lint && npm run test && npm run build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1058.0",

@@ -179,7 +179,7 @@ export class ExpensesController {
     }
     return this.expensesService.update(
       id,
-      updateData as Partial<UpdateExpenseDto & { expenseDate?: Date }>,
+      updateData,
       user.id,
       user.role === UserRole.ADMIN,
     );
