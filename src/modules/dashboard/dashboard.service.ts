@@ -167,6 +167,7 @@ export class DashboardService {
         paidAmount: true,
         dueAmount: true,
         status: true,
+        createdAt: true,
         customer: {
           id: true,
           name: true,
