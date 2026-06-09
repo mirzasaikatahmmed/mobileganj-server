@@ -101,6 +101,11 @@ export class CreateProductDto {
   @IsOptional()
   imei2?: string;
 
+  @ApiPropertyOptional({ example: 'AC123456' })
+  @IsString()
+  @IsOptional()
+  barcode?: string;
+
   @ApiProperty({ example: 150000 })
   @IsNumber()
   @IsNotEmpty()

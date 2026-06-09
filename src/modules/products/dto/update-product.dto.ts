@@ -52,6 +52,11 @@ export class UpdateProductDto {
   @IsOptional()
   imei2?: string;
 
+  @ApiPropertyOptional({ example: 'AC123456' })
+  @IsString()
+  @IsOptional()
+  barcode?: string;
+
   @ApiPropertyOptional({ example: 150000 })
   @IsNumber()
   @IsOptional()

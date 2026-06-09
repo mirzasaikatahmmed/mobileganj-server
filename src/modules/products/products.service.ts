@@ -139,9 +139,19 @@ export class ProductsService {
       localSellerId = savedLocalSeller.id;
     }
 
-    const barcode = generateBarcode(
-      createProductDto.category === ProductCategory.PHONE ? 'PH' : 'AC',
-    );
+    let barcode = createProductDto.barcode;
+    if (barcode) {
+      const existing = await this.productRepository.findOne({
+        where: { barcode },
+      });
+      if (existing) {
+        throw new BadRequestException(`Barcode "${barcode}" already exists`);
+      }
+    } else {
+      barcode = generateBarcode(
+        createProductDto.category === ProductCategory.PHONE ? 'PH' : 'AC',
+      );
+    }
 
     const product = this.productRepository.create({
       ...productData,
@@ -284,6 +294,16 @@ export class ProductsService {
 
   async update(id: string, updateProductDto: UpdateProductDto) {
     const product = await this.findOne(id);
+
+    if (updateProductDto.barcode && updateProductDto.barcode !== product.barcode) {
+      const existing = await this.productRepository.findOne({
+        where: { barcode: updateProductDto.barcode },
+      });
+      if (existing) {
+        throw new BadRequestException(`Barcode "${updateProductDto.barcode}" already exists`);
+      }
+    }
+
     Object.assign(product, updateProductDto);
 
     if (updateProductDto.stockQty !== undefined) {
