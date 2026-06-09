@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsArray,
   IsBoolean,
   IsEnum,
   IsNumber,
@@ -119,6 +120,12 @@ export class UpdateProductDto {
   @IsString()
   @IsOptional()
   photo?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  images?: string[];
 
   @ApiPropertyOptional()
   @IsString()

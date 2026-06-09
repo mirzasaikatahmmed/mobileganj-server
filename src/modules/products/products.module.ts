@@ -8,6 +8,7 @@ import {
   Supplier,
   LocalSeller,
   ProductDamage,
+  ProductImage,
 } from '../../database/entities';
 
 @Module({
@@ -18,6 +19,7 @@ import {
       Supplier,
       LocalSeller,
       ProductDamage,
+      ProductImage,
     ]),
   ],
   controllers: [ProductsController],

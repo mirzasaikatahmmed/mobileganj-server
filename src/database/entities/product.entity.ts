@@ -23,6 +23,7 @@ import { Branch } from './branch.entity';
 import { SaleItem } from './sale-item.entity';
 import { ProductDamage } from './product-damage.entity';
 import { ProductVariant } from './product-variant.entity';
+import { ProductImage } from './product-image.entity';
 
 @Entity('products')
 @Index('IDX_product_imei1', ['imei1'])
@@ -197,4 +198,7 @@ export class Product extends BaseEntity {
 
   @OneToMany(() => ProductVariant, (variant) => variant.product)
   variants: ProductVariant[];
+
+  @OneToMany(() => ProductImage, (image) => image.product, { cascade: true })
+  images: ProductImage[];
 }

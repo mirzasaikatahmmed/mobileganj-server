@@ -11,6 +11,7 @@ import {
   Supplier,
   LocalSeller,
   ProductDamage,
+  ProductImage,
   SaleItem,
   StockTransferItem,
 } from '../../database/entities';
@@ -46,6 +47,8 @@ export class ProductsService {
     private localSellerRepository: Repository<LocalSeller>,
     @InjectRepository(ProductDamage)
     private damageRepository: Repository<ProductDamage>,
+    @InjectRepository(ProductImage)
+    private productImageRepository: Repository<ProductImage>,
   ) {}
 
   async createBrand(createBrandDto: CreateBrandDto) {
@@ -80,8 +83,13 @@ export class ProductsService {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async create(createProductDto: CreateProductDto, _userId: string) {
-    const { localSellerInfo, supplierName, supplierPhone, ...productData } =
-      createProductDto;
+    const {
+      localSellerInfo,
+      supplierName,
+      supplierPhone,
+      images,
+      ...productData
+    } = createProductDto;
 
     if (createProductDto.category === ProductCategory.PHONE) {
       if (!createProductDto.phoneType) {
@@ -165,7 +173,25 @@ export class ProductsService {
           : ProductStatus.OUT_OF_STOCK,
     });
 
-    return this.productRepository.save(product);
+    const savedProduct = await this.productRepository.save(product);
+
+    // Save gallery images
+    if (images && images.length > 0) {
+      const imageEntities = images.map((url, index) =>
+        this.productImageRepository.create({
+          productId: savedProduct.id,
+          url,
+          isPrimary: index === 0,
+          sortOrder: index,
+        }),
+      );
+      await this.productImageRepository.save(imageEntities);
+      // Set cover photo to the first image
+      savedProduct.photo = images[0];
+      await this.productRepository.save(savedProduct);
+    }
+
+    return savedProduct;
   }
 
   async findAll(filterDto: ProductFilterDto) {
@@ -192,7 +218,8 @@ export class ProductsService {
       .leftJoinAndSelect('product.brand', 'brand')
       .leftJoinAndSelect('product.supplier', 'supplier')
       .leftJoinAndSelect('product.localSeller', 'localSeller')
-      .leftJoinAndSelect('product.branch', 'branch');
+      .leftJoinAndSelect('product.branch', 'branch')
+      .leftJoinAndSelect('product.images', 'images');
 
     if (search) {
       queryBuilder.andWhere(
@@ -264,7 +291,14 @@ export class ProductsService {
   async findOne(id: string) {
     const product = await this.productRepository.findOne({
       where: { id },
-      relations: ['brand', 'supplier', 'localSeller', 'branch', 'damages'],
+      relations: [
+        'brand',
+        'supplier',
+        'localSeller',
+        'branch',
+        'damages',
+        'images',
+      ],
     });
 
     if (!product) {
@@ -309,7 +343,7 @@ export class ProductsService {
       }
     }
 
-    const { localSellerInfo, ...productData } = updateProductDto;
+    const { localSellerInfo, images, ...productData } = updateProductDto;
 
     Object.assign(product, productData);
 
@@ -333,6 +367,29 @@ export class ProductsService {
         const seller = this.localSellerRepository.create(localSellerInfo);
         const savedSeller = await this.localSellerRepository.save(seller);
         product.localSellerId = savedSeller.id;
+      }
+    }
+
+    // Update gallery images if provided
+    if (images !== undefined) {
+      // Remove all existing images
+      await this.productImageRepository.delete({ productId: id });
+
+      if (images.length > 0) {
+        const imageEntities = images.map((url, index) =>
+          this.productImageRepository.create({
+            productId: id,
+            url,
+            isPrimary: index === 0,
+            sortOrder: index,
+          }),
+        );
+        await this.productImageRepository.save(imageEntities);
+        // Update the cover photo to the first image
+        product.photo = images[0];
+      } else {
+        // All images removed - clear cover photo
+        product.photo = '';
       }
     }
 
