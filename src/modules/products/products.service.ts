@@ -9,6 +9,7 @@ import {
   Product,
   Brand,
   Supplier,
+  Branch,
   LocalSeller,
   ProductDamage,
   ProductImage,
@@ -343,9 +344,31 @@ export class ProductsService {
       }
     }
 
-    const { localSellerInfo, images, ...productData } = updateProductDto;
+    const {
+      localSellerInfo,
+      images,
+      brandId,
+      supplierId,
+      branchId,
+      ...productData
+    } = updateProductDto;
 
     Object.assign(product, productData);
+
+    if (brandId !== undefined) {
+      product.brandId = brandId;
+      product.brand = undefined as unknown as Brand;
+    }
+
+    if (supplierId !== undefined) {
+      product.supplierId = supplierId;
+      product.supplier = undefined as unknown as Supplier;
+    }
+
+    if (branchId !== undefined) {
+      product.branchId = branchId;
+      product.branch = undefined as unknown as Branch;
+    }
 
     if (updateProductDto.stockQty !== undefined) {
       product.status =
@@ -367,6 +390,7 @@ export class ProductsService {
         const seller = this.localSellerRepository.create(localSellerInfo);
         const savedSeller = await this.localSellerRepository.save(seller);
         product.localSellerId = savedSeller.id;
+        product.localSeller = undefined as unknown as LocalSeller;
       }
     }
 
@@ -384,10 +408,13 @@ export class ProductsService {
             sortOrder: index,
           }),
         );
-        await this.productImageRepository.save(imageEntities);
+        const savedImages =
+          await this.productImageRepository.save(imageEntities);
+        product.images = savedImages;
         // Update the cover photo to the first image
         product.photo = images[0];
       } else {
+        product.images = [];
         // All images removed - clear cover photo
         product.photo = '';
       }
