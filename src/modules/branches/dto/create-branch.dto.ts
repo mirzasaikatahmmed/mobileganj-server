@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateBranchDto {
   @ApiProperty({ example: 'Main Branch' })
@@ -16,4 +16,9 @@ export class CreateBranchDto {
   @IsString()
   @IsOptional()
   phone?: string;
+
+  @ApiPropertyOptional({ default: true })
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }
