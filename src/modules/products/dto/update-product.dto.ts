@@ -6,7 +6,9 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import {
   ProductCategory,
   PhoneType,
@@ -15,6 +17,7 @@ import {
   ProductCondition,
   PhoneRegion,
 } from '../../../common/constants';
+import { LocalSellerInfoDto } from './create-product.dto';
 
 export class UpdateProductDto {
   @ApiPropertyOptional({ example: 'iPhone 15 Pro Max' })
@@ -161,4 +164,10 @@ export class UpdateProductDto {
   @IsUUID()
   @IsOptional()
   branchId?: string;
+
+  @ApiPropertyOptional({ description: 'Local seller info for local phones' })
+  @ValidateNested()
+  @Type(() => LocalSellerInfoDto)
+  @IsOptional()
+  localSellerInfo?: LocalSellerInfoDto;
 }

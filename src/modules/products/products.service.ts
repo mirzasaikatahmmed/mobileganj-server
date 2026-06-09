@@ -295,22 +295,45 @@ export class ProductsService {
   async update(id: string, updateProductDto: UpdateProductDto) {
     const product = await this.findOne(id);
 
-    if (updateProductDto.barcode && updateProductDto.barcode !== product.barcode) {
+    if (
+      updateProductDto.barcode &&
+      updateProductDto.barcode !== product.barcode
+    ) {
       const existing = await this.productRepository.findOne({
         where: { barcode: updateProductDto.barcode },
       });
       if (existing) {
-        throw new BadRequestException(`Barcode "${updateProductDto.barcode}" already exists`);
+        throw new BadRequestException(
+          `Barcode "${updateProductDto.barcode}" already exists`,
+        );
       }
     }
 
-    Object.assign(product, updateProductDto);
+    const { localSellerInfo, ...productData } = updateProductDto;
+
+    Object.assign(product, productData);
 
     if (updateProductDto.stockQty !== undefined) {
       product.status =
         updateProductDto.stockQty > 0
           ? ProductStatus.IN_STOCK
           : ProductStatus.OUT_OF_STOCK;
+    }
+
+    if (localSellerInfo) {
+      if (product.localSellerId) {
+        const seller = await this.localSellerRepository.findOne({
+          where: { id: product.localSellerId },
+        });
+        if (seller) {
+          Object.assign(seller, localSellerInfo);
+          await this.localSellerRepository.save(seller);
+        }
+      } else {
+        const seller = this.localSellerRepository.create(localSellerInfo);
+        const savedSeller = await this.localSellerRepository.save(seller);
+        product.localSellerId = savedSeller.id;
+      }
     }
 
     return this.productRepository.save(product);
