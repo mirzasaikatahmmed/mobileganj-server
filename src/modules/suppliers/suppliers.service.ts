@@ -86,6 +86,209 @@ export class SuppliersService {
     return { ...supplier, ...totals, products };
   }
 
+  async update(
+    id: string,
+    data: Partial<{
+      name?: string;
+      phone?: string;
+      email?: string;
+      address?: string;
+      city?: string;
+      shopName?: string;
+      bankName?: string;
+      accountNumber?: string;
+      note?: string;
+      isActive?: boolean;
+    }>,
+  ) {
+    const supplier = await this.supplierRepository.findOne({ where: { id } });
+    if (!supplier) throw new NotFoundException('Supplier not found');
+
+    Object.assign(supplier, data);
+    return this.supplierRepository.save(supplier);
+  }
+
+  async delete(id: string) {
+    const supplier = await this.supplierRepository.findOne({ where: { id } });
+    if (!supplier) throw new NotFoundException('Supplier not found');
+
+    await this.supplierRepository.remove(supplier);
+  }
+
+  async getStats() {
+    const total = await this.supplierRepository.count();
+    const active = await this.supplierRepository.count({
+      where: { isActive: true },
+    });
+
+    const purchaseResult = (await this.productRepository
+      .createQueryBuilder('product')
+      .select('COUNT(DISTINCT product.supplierId)', 'withPurchase')
+      .addSelect('SUM(product.purchasePrice)', 'totalPurchase')
+      .where('product.supplierId IS NOT NULL')
+      .getRawOne()) as {
+      withPurchase?: string | null;
+      totalPurchase?: string | null;
+    } | null;
+
+    const paymentResult = (await this.paymentRepository
+      .createQueryBuilder('payment')
+      .select('SUM(payment.amount)', 'totalPaid')
+      .getRawOne()) as {
+      totalPaid?: string | null;
+    } | null;
+
+    const totalPurchase = parseFloat(
+      String(purchaseResult?.totalPurchase || '0'),
+    );
+    const totalPaid = parseFloat(String(paymentResult?.totalPaid || '0'));
+
+    return {
+      total,
+      active,
+      inactive: total - active,
+      withPurchase: parseInt(String(purchaseResult?.withPurchase || '0')),
+      totalPurchase,
+      totalPaid,
+      totalDue: totalPurchase - totalPaid,
+    };
+  }
+
+  async getPaymentDues(paginationDto: PaginationDto & { search?: string }) {
+    const { page = 1, limit = 10, search } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.supplierRepository
+      .createQueryBuilder('supplier')
+      .leftJoinAndSelect('supplier.products', 'product');
+
+    if (search) {
+      queryBuilder.andWhere(
+        '(supplier.name LIKE :search OR supplier.phone LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    const suppliers = await queryBuilder
+      .orderBy('supplier.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getMany();
+
+    const dueList = await Promise.all(
+      suppliers.map(async (supplier) => {
+        const totals = await this.getSupplierTotals(supplier.id);
+        if (totals.totalDue <= 0) return null;
+
+        return {
+          id: supplier.id,
+          supplierName: supplier.name,
+          phone: supplier.phone || 'N/A',
+          totalAmount: totals.totalPurchase,
+          paidAmount: totals.totalPaid,
+          dueAmount: totals.totalDue,
+          totalPurchases: totals.totalPhones,
+        };
+      }),
+    );
+
+    const filtered = dueList.filter((item) => item !== null);
+
+    return {
+      data: filtered,
+      meta: {
+        total: filtered.length,
+        page,
+        limit,
+        totalPages: Math.ceil(filtered.length / limit),
+      },
+    };
+  }
+
+  async getSupplierLedger(
+    supplierId: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    await this.findOne(supplierId);
+
+    const purchaseQuery = this.productRepository
+      .createQueryBuilder('product')
+      .where('product.supplierId = :supplierId', { supplierId });
+
+    if (startDate) {
+      purchaseQuery.andWhere('product.createdAt >= :startDate', { startDate });
+    }
+    if (endDate) {
+      purchaseQuery.andWhere('product.createdAt <= :endDate', { endDate });
+    }
+
+    const purchases = await purchaseQuery
+      .orderBy('product.createdAt', 'ASC')
+      .getMany();
+
+    const paymentQuery = this.paymentRepository
+      .createQueryBuilder('payment')
+      .where('payment.supplierId = :supplierId', { supplierId });
+
+    if (startDate) {
+      paymentQuery.andWhere('payment.paymentDate >= :startDate', { startDate });
+    }
+    if (endDate) {
+      paymentQuery.andWhere('payment.paymentDate <= :endDate', { endDate });
+    }
+
+    const payments = await paymentQuery
+      .orderBy('payment.paymentDate', 'ASC')
+      .getMany();
+
+    const ledger: Array<{
+      date: Date;
+      description: string;
+      debit: number;
+      credit: number;
+      type: string;
+      balance: number;
+    }> = [];
+    let balance = 0;
+
+    const transactions = [
+      ...purchases.map((p) => ({
+        date: p.createdAt,
+        description: `Purchase - ${p.imei1 || p.title}`,
+        debit: p.purchasePrice,
+        credit: 0,
+        type: 'purchase',
+      })),
+      ...payments.map((p) => ({
+        date: p.paymentDate,
+        description: `Payment - ${p.paymentMethod}`,
+        debit: 0,
+        credit: p.amount,
+        type: 'payment',
+      })),
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    for (const transaction of transactions) {
+      balance += transaction.debit - transaction.credit;
+      ledger.push({
+        ...transaction,
+        balance,
+      });
+    }
+
+    const totals = await this.getSupplierTotals(supplierId);
+
+    return {
+      ledger,
+      summary: {
+        totalDebit: totals.totalPurchase,
+        totalCredit: totals.totalPaid,
+        balance: totals.totalDue,
+      },
+    };
+  }
+
   async getSupplierTotals(supplierId: string) {
     const purchaseResult = (await this.productRepository
       .createQueryBuilder('product')
@@ -189,5 +392,21 @@ export class SuppliersService {
     });
 
     return { ...seller, products };
+  }
+
+  async createLocalSeller(data: {
+    fullName: string;
+    phone: string;
+    address: string;
+    nidNumber: string;
+    fatherName?: string;
+    motherName?: string;
+    reference?: string;
+    nidFrontPhoto?: string;
+    nidBackPhoto?: string;
+    sellerPhoto?: string;
+  }) {
+    const seller = this.localSellerRepository.create(data);
+    return this.localSellerRepository.save(seller);
   }
 }

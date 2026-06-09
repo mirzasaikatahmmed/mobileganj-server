@@ -156,6 +156,7 @@ export class ServicingService {
       dueOnly?: boolean;
       startDate?: string;
       endDate?: string;
+      search?: string;
     },
   ) {
     const {
@@ -166,6 +167,7 @@ export class ServicingService {
       dueOnly,
       startDate,
       endDate,
+      search,
     } = filterDto;
     const skip = (page - 1) * limit;
 
@@ -186,6 +188,13 @@ export class ServicingService {
 
     if (dueOnly) {
       queryBuilder.andWhere('job.dueAmount > 0');
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        '(job.jobId LIKE :search OR customer.name LIKE :search OR customer.phone LIKE :search OR job.deviceModel LIKE :search OR job.problemDescription LIKE :search)',
+        { search: `%${search}%` },
+      );
     }
 
     if (startDate && endDate) {
@@ -279,10 +288,40 @@ export class ServicingService {
       total?: string | null;
     } | null;
 
+    const counts = await this.jobRepository
+      .createQueryBuilder('job')
+      .select('job.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('job.status')
+      .getRawMany();
+
+    const countsMap = {
+      pending: 0,
+      working: 0,
+      ready: 0,
+      delivered: 0,
+      cancelled: 0,
+    };
+
+    let totalJobs = 0;
+    (counts as Array<{ status: string; count: string }>).forEach((item) => {
+      const cnt = parseInt(item.count, 10) || 0;
+      if (item.status in countsMap) {
+        countsMap[item.status as keyof typeof countsMap] = cnt;
+      }
+      totalJobs += cnt;
+    });
+
     return {
       totalServiceIncome: parseFloat(String(totalIncome?.total || '0')),
       totalServiceDue: parseFloat(String(totalDue?.total || '0')),
       borrowedPartsDue: parseFloat(String(borrowedPartsDue?.total || '0')),
+      totalJobs,
+      pendingJobs: countsMap.pending,
+      workingJobs: countsMap.working,
+      readyJobs: countsMap.ready,
+      deliveredJobs: countsMap.delivered,
+      cancelledJobs: countsMap.cancelled,
     };
   }
 }

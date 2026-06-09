@@ -16,6 +16,7 @@ import {
   PhoneRegion,
 } from '../../common/constants';
 import { Brand } from './brand.entity';
+import { Category } from './category.entity';
 import { Supplier } from './supplier.entity';
 import { LocalSeller } from './local-seller.entity';
 import { Branch } from './branch.entity';
@@ -58,6 +59,15 @@ export class Product extends BaseEntity {
   @ManyToOne(() => Brand, (brand) => brand.products, { nullable: true })
   @JoinColumn({ name: 'brand_id' })
   brand: Brand;
+
+  @Column({ name: 'category_id', nullable: true })
+  categoryId: string;
+
+  @ManyToOne(() => Category, (category) => category.products, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'category_id' })
+  categoryRelation: Category;
 
   @Column({ length: 50, nullable: true })
   imei1: string;

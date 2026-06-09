@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Delete,
   Body,
   Param,
   Query,
@@ -18,7 +20,12 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { SuppliersService } from './suppliers.service';
-import { CreateSupplierDto, MakePaymentDto } from './dto';
+import {
+  CreateSupplierDto,
+  UpdateSupplierDto,
+  CreateLocalSellerDto,
+  MakePaymentDto,
+} from './dto';
 import { PaginationDto } from '../../common/dto';
 import { CurrentUser, Roles } from '../../common/decorators';
 import { RolesGuard } from '../../common/guards';
@@ -50,10 +57,29 @@ export class SuppliersController {
   })
   findAll(
     @Query() paginationDto: PaginationDto,
-    @Query('search') search?: string,
     @Query('dueOnly') dueOnly?: boolean,
   ) {
-    return this.suppliersService.findAll({ ...paginationDto, search, dueOnly });
+    return this.suppliersService.findAll({ ...paginationDto, dueOnly });
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get supplier statistics' })
+  @ApiResponse({ status: 200, description: 'Returns supplier stats' })
+  getStats() {
+    return this.suppliersService.getStats();
+  }
+
+  @Get('payment-dues')
+  @ApiOperation({ summary: 'Get suppliers with payment dues' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns suppliers with due amounts',
+  })
+  getPaymentDues(@Query() paginationDto: PaginationDto) {
+    return this.suppliersService.getPaymentDues(paginationDto);
   }
 
   @Get('local-sellers')
@@ -65,14 +91,19 @@ export class SuppliersController {
     status: 200,
     description: 'Returns paginated list of local sellers',
   })
-  findAllLocalSellers(
-    @Query() paginationDto: PaginationDto,
-    @Query('search') search?: string,
-  ) {
-    return this.suppliersService.findAllLocalSellers({
-      ...paginationDto,
-      search,
-    });
+  findAllLocalSellers(@Query() paginationDto: PaginationDto) {
+    return this.suppliersService.findAllLocalSellers(paginationDto);
+  }
+
+  @Post('local-sellers')
+  @ApiOperation({ summary: 'Create new local seller' })
+  @ApiBody({ type: CreateLocalSellerDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Local seller created successfully',
+  })
+  createLocalSeller(@Body() data: CreateLocalSellerDto) {
+    return this.suppliersService.createLocalSeller(data);
   }
 
   @Get('local-sellers/:id')
@@ -98,6 +129,37 @@ export class SuppliersController {
   @ApiResponse({ status: 404, description: 'Supplier not found' })
   findOne(@Param('id') id: string) {
     return this.suppliersService.findOne(id);
+  }
+
+  @Get(':id/ledger')
+  @ApiOperation({ summary: 'Get supplier ledger' })
+  @ApiParam({ name: 'id', description: 'Supplier ID' })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Returns supplier ledger' })
+  getSupplierLedger(
+    @Param('id') id: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.suppliersService.getSupplierLedger(id, startDate, endDate);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update supplier' })
+  @ApiParam({ name: 'id', description: 'Supplier ID' })
+  @ApiBody({ type: UpdateSupplierDto })
+  @ApiResponse({ status: 200, description: 'Supplier updated successfully' })
+  update(@Param('id') id: string, @Body() data: UpdateSupplierDto) {
+    return this.suppliersService.update(id, data);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete supplier' })
+  @ApiParam({ name: 'id', description: 'Supplier ID' })
+  @ApiResponse({ status: 200, description: 'Supplier deleted successfully' })
+  delete(@Param('id') id: string) {
+    return this.suppliersService.delete(id);
   }
 
   @Post(':id/payment')

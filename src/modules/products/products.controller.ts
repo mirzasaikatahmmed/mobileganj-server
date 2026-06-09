@@ -55,6 +55,23 @@ export class ProductsController {
     return this.productsService.findAllBrands();
   }
 
+  @Patch('brands/:id')
+  @ApiOperation({ summary: 'Update brand' })
+  @ApiParam({ name: 'id', description: 'Brand ID' })
+  @ApiBody({ type: CreateBrandDto })
+  @ApiResponse({ status: 200, description: 'Brand updated successfully' })
+  updateBrand(@Param('id') id: string, @Body() updateBrandDto: CreateBrandDto) {
+    return this.productsService.updateBrand(id, updateBrandDto);
+  }
+
+  @Delete('brands/:id')
+  @ApiOperation({ summary: 'Delete brand' })
+  @ApiParam({ name: 'id', description: 'Brand ID' })
+  @ApiResponse({ status: 200, description: 'Brand deleted successfully' })
+  deleteBrand(@Param('id') id: string) {
+    return this.productsService.deleteBrand(id);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create new product (Stock In)' })
   @ApiBody({ type: CreateProductDto })
@@ -81,6 +98,13 @@ export class ProductsController {
   @ApiResponse({ status: 200, description: 'Returns products summary' })
   getSummary() {
     return this.productsService.getSummary();
+  }
+
+  @Get('performance')
+  @ApiOperation({ summary: 'Get product sales performance' })
+  @ApiResponse({ status: 200, description: 'Returns product performance data' })
+  getPerformance() {
+    return this.productsService.getPerformance();
   }
 
   @Get('search/imei/:imei')
@@ -151,14 +175,14 @@ export class ProductsController {
         'Content-Disposition',
         `inline; filename="barcode-${value}.png"`,
       );
-      return res.send(result as Buffer);
+      return res.send(result);
     } else {
       res.setHeader('Content-Type', 'image/svg+xml');
       res.setHeader(
         'Content-Disposition',
         `inline; filename="barcode-${value}.svg"`,
       );
-      return res.send(result as string);
+      return res.send(result);
     }
   }
 
@@ -169,6 +193,14 @@ export class ProductsController {
   @ApiResponse({ status: 404, description: 'Product not found' })
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(id);
+  }
+
+  @Get(':id/ledger')
+  @ApiOperation({ summary: 'Get product inventory ledger' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({ status: 200, description: 'Returns product ledger data' })
+  getProductLedger(@Param('id') id: string) {
+    return this.productsService.getProductLedger(id);
   }
 
   @Patch(':id')
