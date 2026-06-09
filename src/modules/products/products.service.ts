@@ -492,7 +492,22 @@ export class ProductsService {
       throw new NotFoundException('Damage record not found');
     }
 
-    Object.assign(damage, updateData);
+    if (updateData.isReturned && !damage.isReturned) {
+      damage.isReturned = true;
+      damage.returnDate = new Date();
+      if (damage.product) {
+        damage.product.status =
+          damage.product.stockQty > 0
+            ? ProductStatus.IN_STOCK
+            : ProductStatus.OUT_OF_STOCK;
+        await this.productRepository.save(damage.product);
+      }
+    }
+
+    const rest = { ...updateData };
+    delete rest.isReturned;
+    Object.assign(damage, rest);
+
     return this.damageRepository.save(damage);
   }
 
