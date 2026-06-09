@@ -170,6 +170,11 @@ export class UpdateProductDto {
   @ApiPropertyOptional()
   @IsUUID()
   @IsOptional()
+  supplierId?: string;
+
+  @ApiPropertyOptional()
+  @IsUUID()
+  @IsOptional()
   branchId?: string;
 
   @ApiPropertyOptional({ description: 'Local seller info for local phones' })
