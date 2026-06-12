@@ -22,6 +22,9 @@ export class LocalSeller extends BaseEntity {
   @Column({ name: 'nid_number', length: 30 })
   nidNumber: string;
 
+  @Column({ name: 'social_media', length: 255, nullable: true })
+  socialMedia: string;
+
   @Column({ name: 'nid_front_photo', type: 'text', nullable: true })
   nidFrontPhoto: string;
 

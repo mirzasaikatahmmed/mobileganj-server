@@ -64,6 +64,11 @@ export class LocalSellerInfoDto {
   @IsString()
   @IsOptional()
   sellerPhoto?: string;
+
+  @ApiPropertyOptional({ example: 'https://facebook.com/username' })
+  @IsString()
+  @IsOptional()
+  socialMedia?: string;
 }
 
 export class CreateProductDto {
