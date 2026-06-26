@@ -338,8 +338,8 @@ export class SalesService {
     await queryRunner.startTransaction();
 
     try {
-      // 1. Find existing sale
-      const sale = await this.saleRepository.findOne({
+      // 1. Find existing sale inside transaction
+      const sale = await queryRunner.manager.findOne(Sale, {
         where: { id },
         relations: ['items', 'items.product', 'customer'],
       });
@@ -348,26 +348,31 @@ export class SalesService {
         throw new NotFoundException('Sale not found');
       }
 
-      // 2. Revert stock of existing items
+      // 2. Revert stock of existing items inside transaction
       for (const item of sale.items) {
-        const product = item.product;
-        product.stockQty += item.quantity;
-        if (product.category === ProductCategory.PHONE) {
-          product.status = ProductStatus.IN_STOCK;
-        } else if (
-          product.stockQty > 0 &&
-          product.status === ProductStatus.OUT_OF_STOCK
-        ) {
-          product.status = ProductStatus.IN_STOCK;
+        const product = await queryRunner.manager.findOne(Product, {
+          where: { id: item.productId },
+        });
+        if (product) {
+          product.stockQty += item.quantity;
+          if (product.category === ProductCategory.PHONE) {
+            product.status = ProductStatus.IN_STOCK;
+          } else if (
+            product.stockQty > 0 &&
+            product.status === ProductStatus.OUT_OF_STOCK
+          ) {
+            product.status = ProductStatus.IN_STOCK;
+          }
+          await queryRunner.manager.save(product);
         }
-        await queryRunner.manager.save(product);
       }
 
-      // 3. Delete existing sale items
-      await queryRunner.manager.remove(sale.items);
+      // 3. Delete existing sale items and clear in-memory array
+      await queryRunner.manager.delete(SaleItem, { saleId: sale.id });
+      sale.items = [];
 
-      // 4. Resolve / find customer
-      let customer = await this.customerRepository.findOne({
+      // 4. Resolve / find customer inside transaction
+      let customer = await queryRunner.manager.findOne(Customer, {
         where: { phone: updateSaleDto.customerPhone },
       });
 
@@ -385,12 +390,12 @@ export class SalesService {
         customer = await queryRunner.manager.save(customer);
       }
 
-      // 5. Process new items
+      // 5. Process new items inside transaction
       let subtotal = 0;
-      const saleItems: Partial<SaleItem>[] = [];
+      const saleItems: SaleItem[] = [];
 
       for (const item of updateSaleDto.items) {
-        const product = await this.productRepository.findOne({
+        const product = await queryRunner.manager.findOne(Product, {
           where: { id: item.productId },
         });
 
@@ -411,19 +416,18 @@ export class SalesService {
         const totalPrice = item.unitPrice * item.quantity;
         subtotal += totalPrice;
 
-        saleItems.push(
-          this.saleItemRepository.create({
-            saleId: sale.id,
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice,
-            imei: item.imei || product.imei1,
-            warrantyMonths: item.warrantyMonths || product.warrantyMonths,
-            customWarrantyText:
-              item.customWarrantyText || product.customWarrantyText,
-          }),
-        );
+        const saleItem = this.saleItemRepository.create({
+          saleId: sale.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice,
+          imei: item.imei || product.imei1,
+          warrantyMonths: item.warrantyMonths || product.warrantyMonths,
+          customWarrantyText:
+            item.customWarrantyText || product.customWarrantyText,
+        });
+        saleItems.push(saleItem);
 
         product.stockQty -= item.quantity;
         if (product.category === ProductCategory.PHONE) {
@@ -434,8 +438,9 @@ export class SalesService {
         await queryRunner.manager.save(product);
       }
 
-      // 6. Save new sale items
-      await queryRunner.manager.save(saleItems);
+      // 6. Save new sale items and update relation link
+      const savedItems = await queryRunner.manager.save(SaleItem, saleItems);
+      sale.items = savedItems;
 
       // 7. Calculate new totals
       let discountAmount = 0;
@@ -483,7 +488,7 @@ export class SalesService {
       const updatedSale = await queryRunner.manager.save(sale);
       await queryRunner.commitTransaction();
 
-      return updatedSale;
+      return this.findOne(updatedSale.id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
