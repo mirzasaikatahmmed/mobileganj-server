@@ -43,7 +43,11 @@ export class CustomersService {
       throw new ConflictException('Customer with this phone already exists');
     }
 
-    const customer = this.customerRepository.create(createCustomerDto);
+    const { nid, ...rest } = createCustomerDto;
+    const customer = this.customerRepository.create({
+      ...rest,
+      nidNumber: nid,
+    });
     return this.customerRepository.save(customer);
   }
 
@@ -247,7 +251,11 @@ export class CustomersService {
       }
     }
 
-    Object.assign(customer, updateCustomerDto);
+    const { nid, ...rest } = updateCustomerDto;
+    Object.assign(customer, {
+      ...rest,
+      nidNumber: nid,
+    });
     return this.customerRepository.save(customer);
   }
 
