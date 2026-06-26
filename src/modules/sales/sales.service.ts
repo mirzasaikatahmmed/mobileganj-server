@@ -349,11 +349,27 @@ export class SalesService {
       }
 
       // 2. Revert stock of existing items inside transaction
+      console.log(
+        `[SalesUpdate] Reverting stock for ${sale.items?.length || 0} existing items`,
+      );
       for (const item of sale.items) {
+        const productId = item.productId || item.product?.id;
+        console.log(
+          `[SalesUpdate] Reverting stock for product ${productId}. Item qty = ${item.quantity}. Raw item.productId = ${item.productId}, item.product.id = ${item.product?.id}`,
+        );
+        if (!productId) {
+          console.warn(
+            `[SalesUpdate] No product ID found on sale item! Skipping stock reversion.`,
+          );
+          continue;
+        }
         const product = await queryRunner.manager.findOne(Product, {
-          where: { id: item.productId },
+          where: { id: productId },
         });
         if (product) {
+          console.log(
+            `[SalesUpdate] Found product ${product.title}. Current stockQty = ${product.stockQty}, status = ${product.status}`,
+          );
           product.stockQty += item.quantity;
           if (product.category === ProductCategory.PHONE) {
             product.status = ProductStatus.IN_STOCK;
@@ -363,7 +379,14 @@ export class SalesService {
           ) {
             product.status = ProductStatus.IN_STOCK;
           }
-          await queryRunner.manager.save(product);
+          const savedProduct = await queryRunner.manager.save(product);
+          console.log(
+            `[SalesUpdate] Reverted product ${savedProduct.title}. New stockQty = ${savedProduct.stockQty}, status = ${savedProduct.status}`,
+          );
+        } else {
+          console.warn(
+            `[SalesUpdate] Product ${productId} not found in database!`,
+          );
         }
       }
 
@@ -394,16 +417,30 @@ export class SalesService {
       let subtotal = 0;
       const saleItems: SaleItem[] = [];
 
+      console.log(
+        `[SalesUpdate] Processing ${updateSaleDto.items?.length || 0} new items`,
+      );
       for (const item of updateSaleDto.items) {
+        console.log(
+          `[SalesUpdate] Processing item: productId = ${item.productId}, qty = ${item.quantity}`,
+        );
         const product = await queryRunner.manager.findOne(Product, {
           where: { id: item.productId },
         });
 
         if (!product) {
+          console.error(`[SalesUpdate] Product ${item.productId} not found!`);
           throw new NotFoundException(`Product ${item.productId} not found`);
         }
 
+        console.log(
+          `[SalesUpdate] Loaded product ${product.title}. Current stockQty = ${product.stockQty}, required quantity = ${item.quantity}`,
+        );
+
         if (product.stockQty < item.quantity) {
+          console.warn(
+            `[SalesUpdate] Insufficient stock for ${product.title}: current ${product.stockQty} < required ${item.quantity}`,
+          );
           throw new BadRequestException(
             `Insufficient stock for ${product.title}`,
           );
@@ -436,6 +473,9 @@ export class SalesService {
           product.status = ProductStatus.OUT_OF_STOCK;
         }
         await queryRunner.manager.save(product);
+        console.log(
+          `[SalesUpdate] Deducted product ${product.title}. New stockQty = ${product.stockQty}, status = ${product.status}`,
+        );
       }
 
       // 6. Save new sale items and update relation link
