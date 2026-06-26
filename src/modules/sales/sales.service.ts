@@ -94,6 +94,7 @@ export class SalesService {
           warrantyMonths: item.warrantyMonths || product.warrantyMonths,
           customWarrantyText:
             item.customWarrantyText || product.customWarrantyText,
+          batteryHealth: item.batteryHealth,
         });
 
         product.stockQty -= item.quantity;

@@ -46,4 +46,7 @@ export class SaleItem extends BaseEntity {
 
   @Column({ name: 'custom_warranty_text', type: 'text', nullable: true })
   customWarrantyText: string;
+
+  @Column({ name: 'battery_health', nullable: true })
+  batteryHealth: number;
 }

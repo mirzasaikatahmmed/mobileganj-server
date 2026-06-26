@@ -45,6 +45,14 @@ export class SaleItemDto {
   @IsString()
   @IsOptional()
   customWarrantyText?: string;
+
+  @ApiPropertyOptional({
+    example: 85,
+    description: 'Battery health percentage (for used phones)',
+  })
+  @IsNumber()
+  @IsOptional()
+  batteryHealth?: number;
 }
 
 export class CreateSaleDto {
