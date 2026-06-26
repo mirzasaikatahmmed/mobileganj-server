@@ -56,6 +56,8 @@ export class CustomersService {
       groupId,
       status,
       dueOnly,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
     } = filters;
     const skip = (page - 1) * limit;
 
@@ -91,8 +93,20 @@ export class CustomersService {
       });
     }
 
+    const allowedSortFields = [
+      'name',
+      'phone',
+      'email',
+      'createdAt',
+      'isActive',
+    ];
+    const orderField = allowedSortFields.includes(sortBy)
+      ? `customer.${sortBy}`
+      : 'customer.createdAt';
+    const orderDirection = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
     const [customers, total] = await queryBuilder
-      .orderBy('customer.createdAt', 'DESC')
+      .orderBy(orderField, orderDirection)
       .skip(skip)
       .take(limit)
       .getManyAndCount();

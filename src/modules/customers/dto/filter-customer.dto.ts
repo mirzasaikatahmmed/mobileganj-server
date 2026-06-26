@@ -26,4 +26,12 @@ export class FilterCustomerDto {
 
   @IsOptional()
   limit?: number;
+
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @IsOptional()
+  @IsString()
+  sortOrder?: 'ASC' | 'DESC';
 }
