@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Query,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -121,5 +122,13 @@ export class CustomersController {
   @ApiResponse({ status: 200, description: 'Returns due collection history' })
   getDueCollectionHistory(@Query('customerId') customerId?: string) {
     return this.customersService.getDueCollectionHistory(customerId);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete customer' })
+  @ApiParam({ name: 'id', description: 'Customer ID' })
+  @ApiResponse({ status: 200, description: 'Customer deleted successfully' })
+  remove(@Param('id') id: string) {
+    return this.customersService.remove(id);
   }
 }

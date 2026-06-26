@@ -352,4 +352,13 @@ export class CustomersService {
       order: { createdAt: 'DESC' },
     });
   }
+
+  async remove(id: string) {
+    const customer = await this.customerRepository.findOne({ where: { id } });
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+    await this.customerRepository.softDelete(id);
+    return { message: 'Customer deleted successfully' };
+  }
 }
