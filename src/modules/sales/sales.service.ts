@@ -331,4 +331,164 @@ export class SalesService {
       },
     });
   }
+
+  async update(id: string, updateSaleDto: CreateSaleDto) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // 1. Find existing sale
+      const sale = await this.saleRepository.findOne({
+        where: { id },
+        relations: ['items', 'items.product', 'customer'],
+      });
+
+      if (!sale) {
+        throw new NotFoundException('Sale not found');
+      }
+
+      // 2. Revert stock of existing items
+      for (const item of sale.items) {
+        const product = item.product;
+        product.stockQty += item.quantity;
+        if (product.category === ProductCategory.PHONE) {
+          product.status = ProductStatus.IN_STOCK;
+        } else if (
+          product.stockQty > 0 &&
+          product.status === ProductStatus.OUT_OF_STOCK
+        ) {
+          product.status = ProductStatus.IN_STOCK;
+        }
+        await queryRunner.manager.save(product);
+      }
+
+      // 3. Delete existing sale items
+      await queryRunner.manager.remove(sale.items);
+
+      // 4. Resolve / find customer
+      let customer = await this.customerRepository.findOne({
+        where: { phone: updateSaleDto.customerPhone },
+      });
+
+      if (!customer) {
+        if (!updateSaleDto.customerName) {
+          throw new BadRequestException(
+            'Customer name is required for new customers',
+          );
+        }
+        customer = this.customerRepository.create({
+          name: updateSaleDto.customerName,
+          phone: updateSaleDto.customerPhone,
+          address: updateSaleDto.customerAddress,
+        });
+        customer = await queryRunner.manager.save(customer);
+      }
+
+      // 5. Process new items
+      let subtotal = 0;
+      const saleItems: Partial<SaleItem>[] = [];
+
+      for (const item of updateSaleDto.items) {
+        const product = await this.productRepository.findOne({
+          where: { id: item.productId },
+        });
+
+        if (!product) {
+          throw new NotFoundException(`Product ${item.productId} not found`);
+        }
+
+        if (product.stockQty < item.quantity) {
+          throw new BadRequestException(
+            `Insufficient stock for ${product.title}`,
+          );
+        }
+
+        if (product.category === ProductCategory.PHONE && item.quantity !== 1) {
+          throw new BadRequestException('Phone quantity must be 1');
+        }
+
+        const totalPrice = item.unitPrice * item.quantity;
+        subtotal += totalPrice;
+
+        saleItems.push(
+          this.saleItemRepository.create({
+            saleId: sale.id,
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice,
+            imei: item.imei || product.imei1,
+            warrantyMonths: item.warrantyMonths || product.warrantyMonths,
+            customWarrantyText:
+              item.customWarrantyText || product.customWarrantyText,
+          }),
+        );
+
+        product.stockQty -= item.quantity;
+        if (product.category === ProductCategory.PHONE) {
+          product.status = ProductStatus.SOLD;
+        } else if (product.stockQty === 0) {
+          product.status = ProductStatus.OUT_OF_STOCK;
+        }
+        await queryRunner.manager.save(product);
+      }
+
+      // 6. Save new sale items
+      await queryRunner.manager.save(saleItems);
+
+      // 7. Calculate new totals
+      let discountAmount = 0;
+      if (updateSaleDto.discountType && updateSaleDto.discountValue) {
+        if (updateSaleDto.discountType === 'fixed') {
+          discountAmount = updateSaleDto.discountValue;
+        } else {
+          discountAmount = (subtotal * updateSaleDto.discountValue) / 100;
+        }
+      }
+
+      const grandTotal = subtotal - discountAmount;
+      const dueAmount = grandTotal - updateSaleDto.paidAmount;
+
+      if (updateSaleDto.paidAmount > grandTotal) {
+        throw new BadRequestException('Paid amount cannot exceed grand total');
+      }
+
+      let status: PaymentStatus;
+      if (dueAmount === 0) {
+        status = PaymentStatus.PAID;
+      } else if (updateSaleDto.paidAmount > 0) {
+        status = PaymentStatus.PARTIAL_PAID;
+      } else {
+        status = PaymentStatus.DUE;
+      }
+
+      // 8. Update sale record fields
+      Object.assign(sale, {
+        customerId: customer.id,
+        branchId: updateSaleDto.branchId,
+        subtotal,
+        discountType: updateSaleDto.discountType,
+        discountValue: updateSaleDto.discountValue || 0,
+        discountAmount,
+        grandTotal,
+        paidAmount: updateSaleDto.paidAmount,
+        dueAmount,
+        paymentMethod: updateSaleDto.paymentMethod,
+        status,
+        note: updateSaleDto.note,
+        dueDate: updateSaleDto.dueDate ? new Date(updateSaleDto.dueDate) : null,
+      });
+
+      const updatedSale = await queryRunner.manager.save(sale);
+      await queryRunner.commitTransaction();
+
+      return updatedSale;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
 }

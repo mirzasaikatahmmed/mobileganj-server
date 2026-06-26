@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  Patch,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -68,5 +76,14 @@ export class SalesController {
   @ApiResponse({ status: 404, description: 'Sale not found' })
   findOne(@Param('id') id: string) {
     return this.salesService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update sale' })
+  @ApiParam({ name: 'id', description: 'Sale ID' })
+  @ApiBody({ type: CreateSaleDto })
+  @ApiResponse({ status: 200, description: 'Sale updated successfully' })
+  update(@Param('id') id: string, @Body() updateSaleDto: CreateSaleDto) {
+    return this.salesService.update(id, updateSaleDto);
   }
 }
