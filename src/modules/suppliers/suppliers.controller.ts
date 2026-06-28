@@ -25,6 +25,7 @@ import {
   UpdateSupplierDto,
   CreateLocalSellerDto,
   MakePaymentDto,
+  FilterSupplierDto,
 } from './dto';
 import { PaginationDto } from '../../common/dto';
 import { CurrentUser, Roles } from '../../common/decorators';
@@ -55,11 +56,8 @@ export class SuppliersController {
     status: 200,
     description: 'Returns paginated list of suppliers',
   })
-  findAll(
-    @Query() paginationDto: PaginationDto,
-    @Query('dueOnly') dueOnly?: boolean,
-  ) {
-    return this.suppliersService.findAll({ ...paginationDto, dueOnly });
+  findAll(@Query() filterDto: FilterSupplierDto) {
+    return this.suppliersService.findAll(filterDto);
   }
 
   @Get('stats')
