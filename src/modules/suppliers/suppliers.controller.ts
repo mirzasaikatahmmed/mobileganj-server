@@ -24,6 +24,7 @@ import {
   CreateSupplierDto,
   UpdateSupplierDto,
   CreateLocalSellerDto,
+  UpdateLocalSellerDto,
   MakePaymentDto,
   FilterSupplierDto,
 } from './dto';
@@ -118,6 +119,32 @@ export class SuppliersController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized - Admin only' })
   findOneLocalSeller(@Param('id') id: string) {
     return this.suppliersService.findOneLocalSeller(id);
+  }
+
+  @Put('local-sellers/:id')
+  @ApiOperation({ summary: 'Update local seller' })
+  @ApiParam({ name: 'id', description: 'Local seller ID' })
+  @ApiBody({ type: UpdateLocalSellerDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Local seller updated successfully',
+  })
+  updateLocalSeller(
+    @Param('id') id: string,
+    @Body() data: UpdateLocalSellerDto,
+  ) {
+    return this.suppliersService.updateLocalSeller(id, data);
+  }
+
+  @Delete('local-sellers/:id')
+  @ApiOperation({ summary: 'Delete local seller' })
+  @ApiParam({ name: 'id', description: 'Local seller ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Local seller deleted successfully',
+  })
+  deleteLocalSeller(@Param('id') id: string) {
+    return this.suppliersService.deleteLocalSeller(id);
   }
 
   @Get(':id')

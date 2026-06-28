@@ -409,4 +409,34 @@ export class SuppliersService {
     const seller = this.localSellerRepository.create(data);
     return this.localSellerRepository.save(seller);
   }
+
+  async updateLocalSeller(
+    id: string,
+    data: Partial<{
+      fullName?: string;
+      phone?: string;
+      address?: string;
+      nidNumber?: string;
+      fatherName?: string;
+      motherName?: string;
+      reference?: string;
+      nidFrontPhoto?: string;
+      nidBackPhoto?: string;
+      sellerPhoto?: string;
+      socialMedia?: string;
+    }>,
+  ) {
+    const seller = await this.localSellerRepository.findOne({ where: { id } });
+    if (!seller) throw new NotFoundException('Local seller not found');
+
+    Object.assign(seller, data);
+    return this.localSellerRepository.save(seller);
+  }
+
+  async deleteLocalSeller(id: string) {
+    const seller = await this.localSellerRepository.findOne({ where: { id } });
+    if (!seller) throw new NotFoundException('Local seller not found');
+
+    await this.localSellerRepository.remove(seller);
+  }
 }
