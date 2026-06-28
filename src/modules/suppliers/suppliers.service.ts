@@ -405,6 +405,7 @@ export class SuppliersService {
     nidFrontPhoto?: string;
     nidBackPhoto?: string;
     sellerPhoto?: string;
+    socialMedia?: string;
   }) {
     const seller = this.localSellerRepository.create(data);
     return this.localSellerRepository.save(seller);
@@ -429,6 +430,7 @@ export class SuppliersService {
     const seller = await this.localSellerRepository.findOne({ where: { id } });
     if (!seller) throw new NotFoundException('Local seller not found');
 
+    console.log('updateLocalSeller data:', data);
     Object.assign(seller, data);
     return this.localSellerRepository.save(seller);
   }
