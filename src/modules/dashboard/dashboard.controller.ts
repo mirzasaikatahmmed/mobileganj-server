@@ -25,7 +25,7 @@ export class DashboardController {
   @ApiQuery({
     name: 'dateFilter',
     required: false,
-    enum: ['today', 'last_7_days', 'this_month', 'custom'],
+    enum: ['all', 'today', 'last_7_days', 'this_month', 'custom'],
     description: 'Date filter type',
   })
   @ApiQuery({
@@ -44,7 +44,7 @@ export class DashboardController {
   getStats(
     @Query('branchId') branchId?: string,
     @Query('dateFilter')
-    dateFilter?: 'today' | 'last_7_days' | 'this_month' | 'custom',
+    dateFilter?: 'all' | 'today' | 'last_7_days' | 'this_month' | 'custom',
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
@@ -55,23 +55,67 @@ export class DashboardController {
 
     switch (dateFilter) {
       case 'today':
-        start = new Date(now.setHours(0, 0, 0, 0));
-        end = new Date(now.setHours(23, 59, 59, 999));
+        start = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          0,
+          0,
+          0,
+          0,
+        );
+        end = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          23,
+          59,
+          59,
+          999,
+        );
         break;
       case 'last_7_days':
-        end = new Date();
-        start = new Date();
-        start.setDate(start.getDate() - 7);
+        end = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          23,
+          59,
+          59,
+          999,
+        );
+        start = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() - 7,
+          0,
+          0,
+          0,
+          0,
+        );
         break;
       case 'this_month':
-        start = new Date(now.getFullYear(), now.getMonth(), 1);
-        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        end = new Date(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0,
+          23,
+          59,
+          59,
+          999,
+        );
         break;
       case 'custom':
         if (startDate && endDate) {
           start = new Date(startDate);
           end = new Date(endDate);
         }
+        break;
+      case 'all':
+      default:
+        start = undefined;
+        end = undefined;
         break;
     }
 

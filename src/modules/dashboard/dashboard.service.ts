@@ -56,8 +56,12 @@ export class DashboardService {
       .leftJoin('sale.payments', 'payment')
       .select('SUM(payment.amount)', 'duePaid');
 
+    if (branchId) {
+      duePaidQuery.where('sale.branchId = :branchId', { branchId });
+    }
+
     if (startDate && endDate) {
-      duePaidQuery.where(
+      duePaidQuery.andWhere(
         'payment.paymentDate BETWEEN :startDate AND :endDate',
         {
           startDate,
